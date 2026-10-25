@@ -665,12 +665,31 @@ if st.session_state.initial_scores is not None:
     show_security_warnings(original_message)
     show_risk_assessment(original_message)
 
-    if st.session_state.request_context:
+    
+if st.session_state.request_context:
+    _, current_findings = get_risk_assessment(original_message)
+    current_label = get_label(initial_scores)
+
+    if current_findings:
         st.warning(
             "Additional context may help interpret this result. "
-            "The prediction and rule-based findings should be "
-            "considered alongside independently verified context."
+            "The independent rule-based checks also detected a "
+            "pattern that warrants caution."
         )
+    elif current_label in ("phishing", "spam"):
+        st.warning(
+            f"The AI model classified this message as {current_label}, "
+            "but the independent rule-based checks did not detect "
+            "a high-risk pattern. This difference does not prove "
+            "the message is safe or malicious."
+        )
+    else:
+        st.warning(
+            "The AI model's result is comparatively uncertain. "
+            "Additional context may help, but it cannot guarantee "
+            "a correct assessment."
+        )
+
 
         st.write(
             "Provide only non-sensitive context, such as whether "
