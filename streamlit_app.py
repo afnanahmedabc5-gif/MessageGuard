@@ -194,6 +194,9 @@ if st.button("Analyze Message", type="primary"):
 if st.session_state.initial_scores is not None:
     initial_scores = st.session_state.initial_scores
 
+    st.caption("Message currently being assessed:")
+    st.code(st.session_state.original_message)
+
     show_security_warnings(st.session_state.original_message)
 
     if st.session_state.request_context:
