@@ -35,37 +35,45 @@ def classify_message(text):
 
 
    
+
+        
+
+   
 def get_security_warnings(message):
     text = message.lower()
     warnings = []
 
-    if "enable macros" in text:
+    if "enable macros" in text or "enable macro" in text:
         warnings.append(
             "This message asks you to enable macros. "
             "Unexpected macro-enabled documents can execute "
-            "dangerous code. Do not enable macros unless you "
-            "have independently verified the document and source."
+            "dangerous code. Verify the document and its source "
+            "independently before opening or enabling macros."
         )
 
-    credential_phrases = [
-        "share your password",
-        "send your password",
-        "enter your password",
-        "share your otp",
-        "send your otp",
+    credential_terms = [
+        "password",
+        "passcode",
+        "one-time password",
+        "otp",
         "verification code",
+        "authentication code",
         "cvv",
+        "security code",
+        "card number",
+        "expiry date",
     ]
 
-    if any(phrase in text for phrase in credential_phrases):
+    if any(term in text for term in credential_terms):
         warnings.append(
             "This message mentions passwords, verification codes, "
-            "or card security details. Do not share these in response "
-            "to an unexpected message. Verify the request through "
-            "the organization's official channel."
+            "or payment-card details. Do not share sensitive details "
+            "in response to an unexpected message. Verify requests "
+            "through the organization's official channel."
         )
 
     return warnings
+
 
 
 
