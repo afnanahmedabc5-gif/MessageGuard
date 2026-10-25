@@ -13,6 +13,104 @@ def load_model():
     )
 
 
+def classify_message(text):
+    results = load_model()(text, truncation=True, top_k=None)
+
+    if results and isinstance(results[0], list):
+        scores = results[0]
+    else:
+        scores = results
+
+    scores = sorted(
+        scores,
+        key=lambda item: item["score"],
+        reverse=True
+    )
+
+    if not scores:
+        raise ValueError("The model returned no scores.")
+
+    return scores
+
+
+def has_high_risk_indicators(message):
+    text = message.lower()
+
+    indicators = [
+        "enable macros",
+        "share your password",
+        "send your password",
+        "enter your password",
+        "share your otp",
+        "send your otp",
+        "verification code",
+        "cvv",
+        "claim your prize",
+        "you have won",
+        "you have received $",
+        "guaranteed income",
+    ]
+
+    return any(item in text for item in indicators)
+
+
+def needs_more_information(message, scores):
+    top_score = scores[0]["score"]
+    second_score = scores[1]["score"] if len(scores) > 1 else 0.0
+    margin = top_score - second_score
+
+    uncertain = top_score < 0.75 or margin < 0.20
+    risk_flag = has_high_risk_indicators(message)
+
+    return uncertain or risk_flag
+
+
+def show_assessment(scores):
+    label = scores[0]["label"].lower()
+
+    if label == "phishing":
+        st.error("⚠️ Potential Phishing Detected")
+        st.write(
+            "The model identified patterns associated with phishing."
+        )
+        st.write(
+            "**Advice:** Avoid suspicious links and never share "
+            "passwords or verification codes."
+        )
+
+    elif label == "spam":
+        st.warning("⚠️ Potential Spam Detected")
+        st.write(
+            "The model identified patterns associated with spam."
+        )
+        st.write(
+            "**Advice:** Be cautious with unexpected offers and links."
+        )
+
+    elif label == "ham":
+        st.success("✅ Likely Legitimate")
+        st.write(
+            "The model did not classify this message as phishing or spam."
+        )
+        st.write(
+            "**Advice:** This prediction is not a guarantee of safety. "
+            "Verify unusual requests independently."
+        )
+
+    else:
+        st.info("Unable to classify this message reliably.")
+
+
+def show_scores(scores):
+    with st.expander("Model scores (testing only)"):
+        st.write(
+            "These scores show the model's relative output, "
+            "not guaranteed probabilities of correctness."
+        )
+        for item in scores:
+            st.write(f'{item["label"]}: {item["score"]:.4f}')
+
+
 st.title("🛡️ MessageGuard")
 st.subheader("AI-Powered Message Safety Checker")
 st.write(
@@ -20,10 +118,26 @@ st.write(
     "text for potential phishing and spam."
 )
 
+if "original_message" not in st.session_state:
+    st.session_state.original_message = ""
+
+if "initial_scores" not in st.session_state:
+    st.session_state.initial_scores = None
+
+if "request_context" not in st.session_state:
+    st.session_state.request_context = False
+
+if "final_scores" not in st.session_state:
+    st.session_state.final_scores = None
+
+if "reassessed" not in st.session_state:
+    st.session_state.reassessed = False
+
 message = st.text_area(
     "Paste your message here:",
     max_chars=10000,
-    height=180
+    height=180,
+    key="message_input"
 )
 
 if st.button("Analyze Message", type="primary"):
@@ -32,85 +146,15 @@ if st.button("Analyze Message", type="primary"):
     else:
         try:
             with st.spinner("Analyzing message..."):
-                classifier = load_model()
-                raw_results = classifier(
-                    message,
-                    truncation=True,
-                    top_k=None
-                )
+                scores = classify_message(message.strip())
 
-            # Handle the possible output formats from Transformers.
-            if raw_results and isinstance(raw_results[0], list):
-                scores = raw_results[0]
-            else:
-                scores = raw_results
-
-            if not scores:
-                st.error("The model did not return a result.")
-            else:
-                best_result = max(
-                    scores,
-                    key=lambda item: item["score"]
-                )
-
-                label = best_result["label"].lower()
-
-                # Preserve the existing classification behavior.
-                if label == "phishing":
-                    st.error("⚠️ Potential Phishing Detected")
-                    st.write(
-                        "The model identified patterns associated "
-                        "with phishing."
-                    )
-                    st.write(
-                        "**Advice:** Avoid suspicious links and "
-                        "never share passwords or verification codes."
-                    )
-
-                elif label == "spam":
-                    st.warning("⚠️ Potential Spam Detected")
-                    st.write(
-                        "The model identified patterns associated "
-                        "with spam."
-                    )
-                    st.write(
-                        "**Advice:** Be cautious with unexpected "
-                        "offers and links."
-                    )
-
-                elif label == "ham":
-                    st.success("✅ Likely Legitimate")
-                    st.write(
-                        "The model did not classify this message "
-                        "as phishing or spam."
-                    )
-                    st.write(
-                        "**Advice:** This is not a guarantee of "
-                        "safety. Verify unusual requests independently."
-                    )
-
-                else:
-                    st.info("Uncertain result")
-                    st.write(
-                        "Verify the message through a trusted channel."
-                    )
-
-                # Temporary diagnostic information for development.
-                with st.expander("Model scores (testing only)"):
-                    st.write(
-                        "These are model scores, not guaranteed "
-                        "probabilities of correctness."
-                    )
-
-                    for item in sorted(
-                        scores,
-                        key=lambda result: result["score"],
-                        reverse=True
-                    ):
-                        st.write(
-                            f'{item["label"]}: '
-                            f'{item["score"]:.4f}'
-                        )
+            st.session_state.original_message = message.strip()
+            st.session_state.initial_scores = scores
+            st.session_state.request_context = needs_more_information(
+                message.strip(), scores
+            )
+            st.session_state.final_scores = None
+            st.session_state.reassessed = False
 
         except Exception:
             st.error(
@@ -118,8 +162,70 @@ if st.button("Analyze Message", type="primary"):
                 "If the problem continues, check the app logs."
             )
 
+if st.session_state.initial_scores is not None:
+    initial_scores = st.session_state.initial_scores
+
+    if st.session_state.request_context:
+        st.warning(
+            "We need more information to assess this message reliably."
+        )
+        st.write(
+            "The prediction may be uncertain, or the message may contain "
+            "warning signs that deserve closer review."
+        )
+
+        additional_info = st.text_area(
+            "Additional information (optional)",
+            placeholder=(
+                "For example: where you received it, when it arrived, "
+                "who it claims to be from, or other relevant details."
+            ),
+            max_chars=5000,
+            key="additional_info"
+        )
+
+        if st.button("Reassess with Additional Information"):
+            if not additional_info.strip():
+                st.warning(
+                    "Please provide some additional information first."
+                )
+            else:
+                combined_text = (
+                    "Original message:\n"
+                    + st.session_state.original_message
+                    + "\n\nAdditional user-provided context:\n"
+                    + additional_info.strip()
+                )
+
+                try:
+                    with st.spinner("Reassessing the message..."):
+                        st.session_state.final_scores = (
+                            classify_message(combined_text)
+                        )
+                    st.session_state.reassessed = True
+
+                except Exception:
+                    st.error(
+                        "Reassessment failed. Please try again."
+                    )
+
+        if st.session_state.reassessed:
+            st.subheader("Updated Assessment")
+            show_assessment(st.session_state.final_scores)
+            show_scores(st.session_state.final_scores)
+
+            st.info(
+                "This is a best-effort AI reassessment using your "
+                "additional information. The information has not "
+                "necessarily been independently verified."
+            )
+
+    else:
+        show_assessment(initial_scores)
+        show_scores(initial_scores)
+
 st.divider()
 st.caption(
     "MessageGuard — AI predictions are not guarantees of safety. "
-    "Avoid entering private messages."
+    "Avoid entering private or sensitive information."
 )
