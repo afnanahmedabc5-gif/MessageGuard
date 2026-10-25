@@ -1,7 +1,11 @@
 
+import logging
 import re
+
 import streamlit as st
 from transformers import pipeline
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="MessageGuard",
@@ -18,86 +22,58 @@ def load_model():
 
 
 def classify_message(text):
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError("Please provide a non-empty message.")
+
     results = load_model()(
         text,
         truncation=True,
         top_k=None
     )
 
-    if results and isinstance(results[0], list):
+    if not results:
+        raise ValueError("The model returned no scores.")
+
+    if isinstance(results[0], list):
         scores = results[0]
     else:
         scores = results
 
-    scores = sorted(
+    if not scores:
+        raise ValueError("The model returned no scores.")
+
+    return sorted(
         scores,
         key=lambda item: item["score"],
         reverse=True
     )
 
-    if not scores:
-        raise ValueError("The model returned no scores.")
 
-    return scores
-
-
-# Information that can be sensitive when requested in a message.
+# Information that may be sensitive when a message requests it.
 SENSITIVE_TERMS = [
-    "password",
-    "passwords",
-    "passcode",
-    "passcodes",
-    "one-time password",
-    "one time password",
-    "otp",
-    "verification code",
-    "verification codes",
-    "authentication code",
-    "authentication codes",
-    "security code",
-    "security codes",
-    "verify code",
-    "verification number",
-    "recovery code",
-    "recovery codes",
-    "login code",
-    "login codes",
-    "pin",
-    "pin code",
-    "cvv",
-    "cvc",
-    "card number",
-    "credit card number",
-    "debit card number",
-    "expiry date",
-    "expiration date",
-    "card security details",
-    "employee id",
-    "employee identification number",
-    "employee index number",
-    "employee number",
-    "staff id",
-    "staff number",
-    "departmental routing code",
-    "department routing code",
-    "routing code",
-    "bank account number",
-    "account number",
-    "national identity number",
-    "identity card number",
-    "social security number",
-    "tax identification number",
+    "password", "passwords", "passcode", "passcodes",
+    "one-time password", "one time password", "otp",
+    "verification code", "verification codes",
+    "authentication code", "authentication codes",
+    "security code", "security codes", "verify code",
+    "verification number", "recovery code", "recovery codes",
+    "login code", "login codes", "pin", "pin code",
+    "cvv", "cvc", "card number", "credit card number",
+    "debit card number", "expiry date", "expiration date",
+    "card security details", "employee id",
+    "employee identification number", "employee index number",
+    "employee number", "staff id", "staff number",
+    "departmental routing code", "department routing code",
+    "routing code", "bank account number", "account number",
+    "national identity number", "identity card number",
+    "social security number", "tax identification number",
 ]
 
 MACRO_TERMS = [
-    "enable macro",
-    "enable macros",
-    "enabling macro",
-    "enabling macros",
-    "turn on macro",
-    "turn on macros",
-    "allow macro",
-    "allow macros",
+    "enable macro", "enable macros",
+    "enabling macro", "enabling macros",
+    "turn on macro", "turn on macros",
+    "allow macro", "allow macros",
 ]
 
 SUSPICIOUS_OFFER_TERMS = [
@@ -122,27 +98,60 @@ DISCLOSURE_VERB_PATTERN = (
     r"tell(?:s|ing|t)?|upload(?:s|ed|ing)?|"
     r"reveal(?:s|ed|ing)?|supply(?:s|ied|ying)?|"
     r"divulg(?:e|es|ed|ing)|forward(?:s|ed|ing)?|"
-    r"reply(?:ing|ies|ied)?|confirm(?:s|ed|ing)?|"
-    r"request(?:s|ed|ing)?|ask(?:s|ed|ing)?|"
-    r"require(?:s|d|ing)?|need(?:s|ed|ing)?|"
-    r"want(?:s|ed|ing)?)"
+    r"reply(?:ing|ies|ied)?|respond(?:s|ed|ing)?|"
+    r"confirm(?:s|ed|ing)?)"
+)
+
+
+def compile_term_pattern(terms):
+    alternatives = "|".join(
+        re.escape(term)
+        for term in sorted(terms, key=len, reverse=True)
+    )
+
+    return re.compile(
+        r"(?<!\w)(?:" + alternatives + r")(?!\w)",
+        re.IGNORECASE
+    )
+
+
+# Compile fixed patterns once for repeated use.
+SENSITIVE_PATTERN = compile_term_pattern(SENSITIVE_TERMS)
+MACRO_PATTERN = compile_term_pattern(MACRO_TERMS)
+SUSPICIOUS_OFFER_PATTERN = compile_term_pattern(
+    SUSPICIOUS_OFFER_TERMS
+)
+
+DISCLOSURE_ACTION_PATTERN = re.compile(
+    r"(?<!\w)" + DISCLOSURE_VERB_PATTERN + r"(?!\w)",
+    re.IGNORECASE
 )
 
 
 def contains_term(text, terms):
-    for term in terms:
-        pattern = r"(?<!\w)" + re.escape(term) + r"(?!\w)"
+    # Reuse precompiled patterns for the known term lists.
+    if terms is SENSITIVE_TERMS:
+        pattern = SENSITIVE_PATTERN
+    elif terms is MACRO_TERMS:
+        pattern = MACRO_PATTERN
+    elif terms is SUSPICIOUS_OFFER_TERMS:
+        pattern = SUSPICIOUS_OFFER_PATTERN
+    else:
+        pattern = compile_term_pattern(terms)
 
-        if re.search(pattern, text, re.IGNORECASE):
-            return True
-
-    return False
+    return pattern.search(text) is not None
 
 
 def split_clauses(text):
+    parts = re.split(
+        r"[.!?;\n,]+|\b(?:but|however|instead|although|yet)\b",
+        text,
+        flags=re.IGNORECASE
+    )
+
     return [
-        part.strip()
-        for part in re.split(r"[.!?;\n,]+", text.lower())
+        part.strip().lower()
+        for part in parts
         if part.strip()
     ]
 
@@ -151,15 +160,17 @@ def is_negated_action(clause, action_start):
     prefix = clause[:action_start]
 
     if re.search(
-        NEGATION_WORDING + r"\s+(?:\w+\s+){0,4}$",
-        prefix
+        NEGATION_WORDING + r"(?:\s+\w+){0,4}\s*$",
+        prefix,
+        re.IGNORECASE
     ):
         return True
 
     if re.search(
         r"\b(?:dangerous|unsafe|risky|unwise)\s+to\s+"
         r"(?:\w+\s+){0,2}$",
-        prefix
+        prefix,
+        re.IGNORECASE
     ):
         return True
 
@@ -167,205 +178,206 @@ def is_negated_action(clause, action_start):
 
 
 def has_sensitive_term(clause):
-    return contains_term(clause, SENSITIVE_TERMS)
+    return SENSITIVE_PATTERN.search(clause) is not None
+
+
+# Common indirect requests, such as "reply with your code".
+INDIRECT_DISCLOSURE_PATTERNS = [
+    re.compile(
+        r"\b(?:reply|respond)\b.{0,35}\bwith\b",
+        re.IGNORECASE
+    ),
+    re.compile(
+        r"\b(?:need|needs|needed|want|wants|wanted|"
+        r"require|requires|required|request|requests|"
+        r"requested|ask|asks|asked)\b.{0,70}\b"
+        + DISCLOSURE_VERB_PATTERN + r"\b",
+        re.IGNORECASE
+    ),
+]
+
+SENSITIVE_REFERENCE_PATTERN = re.compile(
+    r"\b(?:the|your|this|these)\s+"
+    r"(?:code|password|passcode|pin|cvv|cvc|"
+    r"card number|details|information|number|"
+    r"verification code|recovery code|security code)\b",
+    re.IGNORECASE
+)
 
 
 def requests_sensitive_information(message):
-    text = message.lower()
-    clauses = split_clauses(text)
+    """
+    Flag likely requests to disclose sensitive information.
+    This is a heuristic, not proof of malicious intent.
+    """
+    if not isinstance(message, str) or not message.strip():
+        return False
 
-    sensitive_pattern = (
-        r"(?<!\w)(?:"
-        + "|".join(
-            re.escape(term)
-            for term in sorted(
-                SENSITIVE_TERMS,
-                key=len,
-                reverse=True
-            )
-        )
-        + r")(?!\w)"
-    )
+    clauses = split_clauses(message)
 
-    action_pattern = (
-        r"(?<!\w)"
-        + DISCLOSURE_VERB_PATTERN
-        + r"(?!\w)"
-    )
-
-    # Detect a disclosure/request action close to sensitive information.
-    # This also covers employee identifiers and routing codes.
     for clause in clauses:
         sensitive_matches = list(
-            re.finditer(sensitive_pattern, clause)
+            SENSITIVE_PATTERN.finditer(clause)
         )
 
         if not sensitive_matches:
             continue
 
-        action_matches = list(
-            re.finditer(action_pattern, clause)
-        )
-
-        for action_match in action_matches:
-            if is_negated_action(clause, action_match.start()):
-                continue
-
-            nearby_sensitive_term = any(
-                abs(
-                    action_match.start() - sensitive_match.start()
-                ) <= 120
-                or abs(
-                    action_match.end() - sensitive_match.start()
-                ) <= 120
-                for sensitive_match in sensitive_matches
+        # Direct disclosure actions near sensitive terms.
+        for action in DISCLOSURE_ACTION_PATTERN.finditer(clause):
+            nearby = any(
+                abs(sensitive.start() - action.start()) <= 120
+                for sensitive in sensitive_matches
             )
 
-            if nearby_sensitive_term:
+            if nearby and not is_negated_action(
+                clause, action.start()
+            ):
                 return True
 
-        # Handle common requests such as:
-        # "Please reply with your password."
-        # "You need to send your verification code."
-        indirect_patterns = [
-            r"\b(?:reply|respond)\b.{0,35}\bwith\b",
-            (
-                r"\b(?:need|needs|needed|want|wants|wanted|"
-                r"require|requires|required|request|requests|"
-                r"requested|ask|asks|asked)\b.{0,70}\b"
-                + DISCLOSURE_VERB_PATTERN
-                + r"\b"
-            ),
-        ]
-
-        for pattern in indirect_patterns:
-            for match in re.finditer(pattern, clause):
-                action_match = re.search(
-                    action_pattern,
-                    match.group()
-                )
-
-                if not action_match:
-                    continue
-
-                absolute_start = (
-                    match.start() + action_match.start()
-                )
-
-                if is_negated_action(clause, absolute_start):
-                    continue
-
-                if any(
-                    abs(
-                        absolute_start - sensitive_match.start()
-                    ) <= 120
-                    for sensitive_match in sensitive_matches
+        # Indirect requests, including "reply with your password".
+        for match in INDIRECT_DISCLOSURE_PATTERNS:
+            for request in match.finditer(clause):
+                if not any(
+                    request.start() - 120
+                    <= sensitive.start()
+                    <= request.end() + 120
+                    for sensitive in sensitive_matches
                 ):
-                    return True
+                    continue
 
-    # Check nearby follow-up clauses that refer to information
-    # mentioned in the preceding clause.
-    reference_terms = [
-        "the code",
-        "your code",
-        "this code",
-        "the password",
-        "your password",
-        "the passcode",
-        "your passcode",
-        "the pin",
-        "your pin",
-        "the cvv",
-        "your cvv",
-        "the card number",
-        "your card number",
-        "the details",
-        "these details",
-        "this information",
-        "the number",
-        "your number",
-        "it",
-        "them",
-    ]
+                # "Reply with" and "respond with" are disclosure
+                # structures even without another action verb.
+                if re.search(
+                    r"\b(?:reply|respond)\b.{0,35}\bwith\b",
+                    request.group(),
+                    re.IGNORECASE
+                ):
+                    if not is_negated_action(
+                        clause, request.start()
+                    ):
+                        return True
 
-    for index, clause in enumerate(clauses):
+                # For other indirect requests, check the action verb.
+                action = DISCLOSURE_ACTION_PATTERN.search(
+                    request.group()
+                )
+
+                if action:
+                    action_start = request.start() + action.start()
+
+                    if not is_negated_action(
+                        clause, action_start
+                    ):
+                        return True
+
+    # Check nearby follow-up clauses only when they explicitly
+    # refer to sensitive information.
+    for index, clause in enumerate(clauses[:-1]):
         if not has_sensitive_term(clause):
             continue
 
         for follow_up in clauses[index + 1:index + 3]:
-            if not contains_term(follow_up, reference_terms):
+            if not SENSITIVE_REFERENCE_PATTERN.search(follow_up):
                 continue
 
-            for action_match in re.finditer(
-                action_pattern,
+            for action in DISCLOSURE_ACTION_PATTERN.finditer(
                 follow_up
             ):
                 if not is_negated_action(
-                    follow_up,
-                    action_match.start()
+                    follow_up, action.start()
                 ):
                     return True
 
     return False
 
 
+
 def has_positive_macro_instruction(message):
+    if not isinstance(message, str) or not message.strip():
+        return False
+
+    macro_action_pattern = re.compile(
+        r"\b(?:enable|enabling|turn\s+on|allow)\s+macros?\b",
+        re.IGNORECASE
+    )
+
+    warning_patterns = [
+        r"\b(?:do\s+not|don't|never|should\s+not|"
+        r"shouldn't|must\s+not|mustn't|avoid|"
+        r"cannot|can't)\b.{0,50}\benabl(?:e|ing)\s+macros?\b",
+        r"\b(?:dangerous|unsafe|risky|unwise)\s+"
+        r"to\s+enabl(?:e|ing)\s+macros?\b",
+        r"\benabling\s+macros?\s+(?:is|can\s+be)\s+"
+        r"(?:dangerous|unsafe|risky)\b",
+    ]
+
     for clause in split_clauses(message):
-        if not contains_term(clause, MACRO_TERMS):
+        actions = list(macro_action_pattern.finditer(clause))
+
+        if not actions:
             continue
 
-        warning_patterns = [
-            r"\bdo not\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bdon't\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bnever\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bshould not\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bshouldn't\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bmust not\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bmustn't\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            r"\bavoid\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
-            (
-                r"\b(?:dangerous|unsafe|risky)\s+to\s+"
-                r"enabl(?:e|ing)\s+macros?\b"
-            ),
-        ]
+        for action in actions:
+            if is_negated_action(clause, action.start()):
+                continue
 
-        if any(
-            re.search(pattern, clause)
-            for pattern in warning_patterns
-        ):
-            continue
+            prefix = clause[:action.start()]
+            suffix = clause[action.end():]
 
-        for action in [
-            "enable macro",
-            "enable macros",
-            "enabling macro",
-            "enabling macros",
-            "turn on macro",
-            "turn on macros",
-            "allow macro",
-            "allow macros",
-        ]:
-            pattern = r"(?<!\w)" + re.escape(action) + r"(?!\w)"
+            # Skip an action only when a warning clearly refers to it.
+            if any(
+                re.search(pattern, clause, re.IGNORECASE)
+                for pattern in warning_patterns
+            ):
+                # Still detect a separate, non-negated instruction
+                # in the same clause if there is one.
+                other_actions = [
+                    candidate for candidate in actions
+                    if candidate.start() != action.start()
+                ]
+                if not other_actions:
+                    continue
 
-            for match in re.finditer(pattern, clause):
-                if not is_negated_action(clause, match.start()):
-                    return True
+            if re.search(
+                r"\b(?:dangerous|unsafe|risky|unwise)\s+to\s*$",
+                prefix,
+                re.IGNORECASE
+            ):
+                continue
+
+            if re.match(
+                r"\s+(?:is|can\s+be)\s+"
+                r"(?:dangerous|unsafe|risky)\b",
+                suffix,
+                re.IGNORECASE
+            ):
+                continue
+
+            return True
 
     return False
 
 
-def get_security_warnings(message):
+
+
+def get_security_warnings(message, findings=None):
     text = message.lower()
     warnings = []
 
-    if has_positive_macro_instruction(text):
+    if findings is None:
+        _, findings = get_risk_assessment(message)
+
+    finding_titles = {item["title"] for item in findings}
+
+    if "Potentially dangerous document instruction" in finding_titles:
         warnings.append(
             "This message appears to instruct you to enable macros. "
             "Unexpected macro-enabled documents can execute dangerous "
             "code. Verify the document and its source independently."
         )
 
-    if requests_sensitive_information(text):
+    if "Sensitive-information request" in finding_titles:
         warnings.append(
             "This message may ask you to disclose sensitive information "
             "or identifiers. Never share passwords, authentication codes, "
@@ -381,7 +393,7 @@ def get_security_warnings(message):
             "to an unexpected message."
         )
 
-    if contains_term(text, SUSPICIOUS_OFFER_TERMS):
+    if "Suspicious financial offer" in finding_titles:
         warnings.append(
             "This message contains wording associated with potentially "
             "suspicious financial offers. Guaranteed or unusually high "
@@ -451,7 +463,7 @@ def get_label(scores):
     return scores[0]["label"].lower()
 
 
-def needs_more_information(message, scores):
+def needs_more_information(message, scores, findings=None):
     top_score = scores[0]["score"]
     second_score = (
         scores[1]["score"] if len(scores) > 1 else 0.0
@@ -459,7 +471,8 @@ def needs_more_information(message, scores):
     margin = top_score - second_score
     label = get_label(scores)
 
-    _, findings = get_risk_assessment(message)
+    if findings is None:
+        _, findings = get_risk_assessment(message)
 
     return (
         bool(findings)
@@ -469,8 +482,10 @@ def needs_more_information(message, scores):
     )
 
 
-def show_assessment(scores):
+def show_assessment(scores, title="AI Assessment"):
     label = get_label(scores)
+
+    st.subheader(title)
 
     if label == "phishing":
         st.error("⚠️ Potential Phishing Detected")
@@ -520,16 +535,25 @@ def show_scores(scores):
             )
 
 
-def show_security_warnings(message):
-    for warning in get_security_warnings(message):
+def show_security_warnings(message, findings=None):
+    for warning in get_security_warnings(message, findings):
         st.warning(f"🛡️ Security warning: {warning}")
 
 
-def show_risk_assessment(message):
-    level, findings = get_risk_assessment(message)
+def get_rule_level(findings):
+    if any(item["level"] == "high" for item in findings):
+        return "high"
 
-    st.subheader("Independent Rule-Based Risk Checks")
+    if findings:
+        return "elevated"
 
+    return "no_rule_triggered"
+
+
+def show_rule_assessment(message, title, findings):
+    level = get_rule_level(findings)
+
+    st.subheader(title)
     st.caption(
         "These checks use message wording and predefined rules. "
         "They do not verify the sender or prove that a message "
@@ -548,57 +572,94 @@ def show_risk_assessment(message):
         )
     else:
         st.info(
-            "No high-risk pattern was detected by the current rules. "
+            "No configured warning pattern was detected. "
             "This does not mean the message is safe."
         )
+
+    if not findings:
+        return
 
     for finding in findings:
         st.markdown(f'**{finding["title"]}**')
         st.write(finding["detail"])
 
 
-def show_context_section(original_message, initial_scores):
-    _, findings = get_risk_assessment(original_message)
+def show_risk_assessment(message):
+    _, findings = get_risk_assessment(message)
+    show_rule_assessment(
+        message,
+        "Independent Rule-Based Risk Checks",
+        findings
+    )
+
+
+def show_context_section(
+    original_message,
+    initial_scores,
+    initial_findings
+):
     current_label = get_label(initial_scores)
 
-    if findings:
+    if initial_findings:
         st.warning(
             "Additional context may help interpret this result. "
-            "The independent rule-based checks also detected a "
-            "pattern that warrants caution."
+            "The independent rule-based checks also detected "
+            "a pattern that warrants caution."
         )
     elif current_label in ("phishing", "spam"):
         st.warning(
             f"The AI model classified this message as {current_label}, "
             "but the independent rule-based checks did not detect "
-            "a high-risk pattern. This difference does not prove "
-            "the message is safe or malicious."
+            "one of their configured warning patterns. This does not "
+            "prove that the message is safe or malicious."
         )
     else:
         st.warning(
-            "The AI model's result is comparatively uncertain. "
-            "Additional context may help, but it cannot guarantee "
-            "a correct assessment."
+            "The AI model's result may be uncertain. Additional context "
+            "may help, but it cannot guarantee a correct assessment."
         )
 
     st.write(
-        "Provide only non-sensitive context, such as whether "
-        "you expected the message or verified the sender through "
-        "an official channel. Never enter passwords, verification "
-        "codes, payment-card details, or private identifiers."
+        "Provide only non-sensitive context. For example, say whether "
+        "you expected the message or independently verified the sender. "
+        "Do not enter passwords, verification codes, payment-card "
+        "details, or private identifiers."
+    )
+
+    source = st.selectbox(
+        "Where did the message arrive?",
+        [
+            "SMS",
+            "WhatsApp",
+            "Email",
+            "Social media",
+            "Phone call or voicemail",
+            "Other / unknown",
+        ],
+        key=f"message_source_{st.session_state.analysis_version}"
     )
 
     additional_info = st.text_area(
         "Additional information (optional)",
         placeholder=(
-            "Where did the message arrive? Were you expecting it? "
-            "Did you verify the sender through an official channel?"
+            "Were you expecting the message? Did you verify the sender "
+            "through an official channel? Avoid sensitive details."
         ),
         max_chars=5000,
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-    if st.button("Reassess with Additional Information"):
+    if st.button(
+        "Reassess with Additional Information",
+        key=f"reassess_{st.session_state.analysis_version}"
+    ):
+        # Clear previous reassessment results before any new attempt.
+        st.session_state.updated_scores = None
+        st.session_state.updated_findings = None
+        st.session_state.updated_combined_text = None
+        st.session_state.updated_source = None
+        st.session_state.reassessed = False
+
         if not additional_info.strip():
             st.warning(
                 "Please provide relevant, non-sensitive context first."
@@ -607,50 +668,81 @@ def show_context_section(original_message, initial_scores):
             combined_text = (
                 "Original message:\n"
                 + original_message
-                + "\n\nAdditional user-provided context:\n"
+                + "\n\nUser-reported message source (unverified):\n"
+                + source
+                + "\n\nAdditional user-provided context (unverified):\n"
                 + additional_info.strip()
             )
 
             try:
                 with st.spinner("Reassessing the message..."):
-                    new_scores = classify_message(combined_text)
+                    updated_scores = classify_message(combined_text)
+                    _, updated_findings = get_risk_assessment(
+                        combined_text
+                    )
 
-                st.session_state.final_scores = new_scores
+                st.session_state.updated_scores = updated_scores
+                st.session_state.updated_findings = updated_findings
+                st.session_state.updated_combined_text = combined_text
+                st.session_state.updated_source = source
                 st.session_state.reassessed = True
 
             except Exception:
+                logger.exception(
+                    "MessageGuard context reassessment failed"
+                )
                 st.error(
-                    "Reassessment failed. Please try again."
+                    "Reassessment failed. Please try again. "
+                    "If the problem continues, check the app logs."
                 )
 
-    if st.session_state.reassessed:
-        final_scores = st.session_state.final_scores
+    if (
+        st.session_state.reassessed
+        and st.session_state.updated_scores is not None
+        and st.session_state.updated_findings is not None
+    ):
+        updated_scores = st.session_state.updated_scores
+        updated_findings = st.session_state.updated_findings
 
-        st.subheader("Updated AI Assessment")
-        show_assessment(final_scores)
-        show_scores(final_scores)
+        show_assessment(
+            updated_scores,
+            "Updated AI Assessment"
+        )
+        show_scores(updated_scores)
 
         initial_label = get_label(initial_scores)
-        updated_label = get_label(final_scores)
+        updated_label = get_label(updated_scores)
 
         if initial_label == updated_label:
             st.info(
                 f"The AI model returned the same label both times: "
-                f"{initial_label}. This does not independently "
-                "confirm that the label is correct."
+                f"{initial_label}. This does not independently confirm "
+                "that the label is correct."
             )
         else:
             st.info(
                 f"The AI model's label changed from {initial_label} "
-                f"to {updated_label} after context was added. "
-                "A changed prediction is not proof that the updated "
-                "prediction is correct."
+                f"to {updated_label} after context was added. A changed "
+                "prediction is not proof that the updated prediction "
+                "is correct."
             )
 
         st.caption(
-            "Both assessments use the same AI model. The added "
-            "context and the sender have not been independently "
-            "verified by MessageGuard."
+            f"Selected source: {st.session_state.updated_source}. "
+            "The source and added context are user-provided and have "
+            "not been independently verified by MessageGuard."
+        )
+
+        show_rule_assessment(
+            original_message,
+            "Rule-Based Checks — Original Message",
+            initial_findings
+        )
+
+        show_rule_assessment(
+            st.session_state.updated_combined_text,
+            "Rule-Based Checks — Message Plus Context",
+            updated_findings
         )
 
 
@@ -664,23 +756,22 @@ st.write(
 
 
 # Initialize session state.
-if "original_message" not in st.session_state:
-    st.session_state.original_message = ""
+STATE_DEFAULTS = {
+    "original_message": "",
+    "initial_scores": None,
+    "initial_findings": None,
+    "request_context": False,
+    "updated_scores": None,
+    "updated_findings": None,
+    "updated_combined_text": None,
+    "updated_source": None,
+    "reassessed": False,
+    "analysis_version": 0,
+}
 
-if "initial_scores" not in st.session_state:
-    st.session_state.initial_scores = None
-
-if "request_context" not in st.session_state:
-    st.session_state.request_context = False
-
-if "final_scores" not in st.session_state:
-    st.session_state.final_scores = None
-
-if "reassessed" not in st.session_state:
-    st.session_state.reassessed = False
-
-if "analysis_version" not in st.session_state:
-    st.session_state.analysis_version = 0
+for state_key, default_value in STATE_DEFAULTS.items():
+    if state_key not in st.session_state:
+        st.session_state[state_key] = default_value
 
 
 message = st.text_area(
@@ -692,10 +783,15 @@ message = st.text_area(
 
 
 if st.button("Analyze Message", type="primary"):
+    # Clear every result from the previous analysis.
     st.session_state.original_message = ""
     st.session_state.initial_scores = None
+    st.session_state.initial_findings = None
     st.session_state.request_context = False
-    st.session_state.final_scores = None
+    st.session_state.updated_scores = None
+    st.session_state.updated_findings = None
+    st.session_state.updated_combined_text = None
+    st.session_state.updated_source = None
     st.session_state.reassessed = False
     st.session_state.analysis_version += 1
 
@@ -707,14 +803,19 @@ if st.button("Analyze Message", type="primary"):
         try:
             with st.spinner("Analyzing message..."):
                 scores = classify_message(cleaned_message)
+                _, findings = get_risk_assessment(cleaned_message)
 
             st.session_state.original_message = cleaned_message
             st.session_state.initial_scores = scores
-            st.session_state.request_context = (
-                needs_more_information(cleaned_message, scores)
+            st.session_state.initial_findings = findings
+            st.session_state.request_context = needs_more_information(
+                cleaned_message,
+                scores,
+                findings
             )
 
         except Exception:
+            logger.exception("MessageGuard initial analysis failed")
             st.error(
                 "Analysis failed. Please try again. "
                 "If the problem continues, check the app logs."
@@ -724,20 +825,28 @@ if st.button("Analyze Message", type="primary"):
 if st.session_state.initial_scores is not None:
     original_message = st.session_state.original_message
     initial_scores = st.session_state.initial_scores
+    initial_findings = st.session_state.initial_findings or []
 
     st.caption("Message currently being assessed:")
     st.code(original_message)
 
-    st.subheader("Initial AI Assessment")
-    show_assessment(initial_scores)
+    show_assessment(initial_scores, "Initial AI Assessment")
     show_scores(initial_scores)
 
-    show_security_warnings(original_message)
-    show_risk_assessment(original_message)
+    show_security_warnings(original_message, initial_findings)
 
-    # The form is available for every context-request scenario.
+    show_rule_assessment(
+        original_message,
+        "Rule-Based Checks — Original Message",
+        initial_findings
+    )
+
     if st.session_state.request_context:
-        show_context_section(original_message, initial_scores)
+        show_context_section(
+            original_message,
+            initial_scores,
+            initial_findings
+        )
 
 
 st.divider()
@@ -746,3 +855,4 @@ st.caption(
     "Rule-based checks can miss threats or flag harmless messages. "
     "Avoid entering private or sensitive information."
 )
+
