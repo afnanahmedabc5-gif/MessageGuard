@@ -54,15 +54,14 @@ def has_high_risk_indicators(message):
     return any(item in text for item in indicators)
 
 
+
 def needs_more_information(message, scores):
     top_score = scores[0]["score"]
     second_score = scores[1]["score"] if len(scores) > 1 else 0.0
     margin = top_score - second_score
 
-    uncertain = top_score < 0.75 or margin < 0.20
-    risk_flag = has_high_risk_indicators(message)
+    return top_score < 0.75 or margin < 0.20
 
-    return uncertain or risk_flag
 
 
 def show_assessment(scores):
