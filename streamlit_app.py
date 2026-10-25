@@ -41,59 +41,247 @@ def classify_message(text):
     return scores
 
 
+CREDENTIAL_TERMS = [
+    "password",
+    "passcode",
+    "one-time password",
+    "otp",
+    "verification code",
+    "authentication code",
+    "security code",
+    "cvv",
+    "card number",
+    "expiry date",
+    "expiration date",
+]
+
+DISCLOSURE_ACTIONS = [
+    "reply with",
+    "give us",
+    "give me",
+    "send",
+    "share",
+    "provide",
+    "enter",
+    "submit",
+    "disclose",
+    "type",
+]
+
+MACRO_TERMS = [
+    "enable macro",
+    "enable macros",
+    "turn on macros",
+    "allow macros",
+]
+
+SUSPICIOUS_OFFER_TERMS = [
+    "guaranteed income",
+    "guaranteed return",
+    "receive $",
+    "earn money instantly",
+    "double your money",
+]
+
+
+def contains_term(text, terms):
+    for term in terms:
+        pattern = r"(?<!\w)" + re.escape(term) + r"(?!\w)"
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+
+    return False
+
+
+def split_clauses(text):
+    return [
+        part.strip()
+        for part in re.split(r"[.!?;\n]+", text.lower())
+        if part.strip()
+    ]
+
+
+def is_negated_action(clause, action_start):
+    """
+    Check whether an action is preceded by wording such as
+    'never send', 'do not share', or 'will never ask you to share'.
+    """
+    prefix = clause[:action_start]
+
+    # Only examine the words immediately before the action.
+    prefix_words = prefix.split()[-9:]
+
+    if not prefix_words:
+        return False
+
+    recent_prefix = " ".join(prefix_words)
+
+    negation_pattern = (
+        r"\b(?:"
+        r"never|"
+        r"not|"
+        r"don't|"
+        r"do not|"
+        r"doesn't|"
+        r"does not|"
+        r"didn't|"
+        r"did not|"
+        r"shouldn't|"
+        r"should not|"
+        r"mustn't|"
+        r"must not|"
+        r"cannot|"
+        r"can't|"
+        r"avoid"
+        r")\b"
+    )
+
+    if not re.search(negation_pattern, recent_prefix):
+        return False
+
+    # Handle constructions such as:
+    # "Your bank will never ask you to share your code."
+    if re.search(
+        r"\b(?:never|not|don't|do not|doesn't|does not|"
+        r"didn't|did not|shouldn't|should not|mustn't|"
+        r"must not|cannot|can't|avoid)\b",
+        recent_prefix,
+    ):
+        return True
+
+    return False
+
+
+def find_positive_actions(clause):
+    """Return disclosure actions that are not locally negated."""
+    actions = []
+
+    for action in DISCLOSURE_ACTIONS:
+        pattern = r"(?<!\w)" + re.escape(action) + r"(?!\w)"
+
+        for match in re.finditer(pattern, clause):
+            if not is_negated_action(clause, match.start()):
+                actions.append(match.group())
+
+    return actions
+
+
+def requests_sensitive_information(message):
+    """
+    Detect a likely request to disclose sensitive information.
+    A sensitive term alone, or an unrelated action alone, is
+    not enough to trigger this finding.
+    """
+    clauses = split_clauses(message)
+
+    sensitive_clauses = [
+        clause
+        for clause in clauses
+        if contains_term(clause, CREDENTIAL_TERMS)
+    ]
+
+    if not sensitive_clauses:
+        return False
+
+    # First check whether a sensitive term and a positive
+    # disclosure action appear in the same clause.
+    for clause in sensitive_clauses:
+        if find_positive_actions(clause):
+            return True
+
+    # Then check for a follow-up instruction referring to
+    # information mentioned in an earlier clause.
+    reference_terms = [
+        "the code",
+        "your code",
+        "this code",
+        "the password",
+        "your password",
+        "the passcode",
+        "your passcode",
+        "the cvv",
+        "your cvv",
+        "the card number",
+        "your card number",
+        "the details",
+        "these details",
+        "this information",
+        "it",
+        "them",
+    ]
+
+    for index, clause in enumerate(clauses):
+        if not contains_term(clause, CREDENTIAL_TERMS):
+            continue
+
+        # Only inspect the next two clauses for a related
+        # instruction, rather than unrelated text anywhere.
+        for follow_up in clauses[index + 1:index + 3]:
+            if not find_positive_actions(follow_up):
+                continue
+
+            if contains_term(follow_up, reference_terms):
+                return True
+
+    return False
+
+
+def has_positive_macro_instruction(message):
+    for clause in split_clauses(message):
+        if not contains_term(clause, MACRO_TERMS):
+            continue
+
+        # Treat direct warnings such as "Do not enable macros"
+        # as warnings, not as instructions to enable them.
+        macro_actions = [
+            "enable macro",
+            "enable macros",
+            "turn on macros",
+            "allow macros",
+        ]
+
+        for action in macro_actions:
+            pattern = r"(?<!\w)" + re.escape(action) + r"(?!\w)"
+
+            for match in re.finditer(pattern, clause):
+                if not is_negated_action(clause, match.start()):
+                    return True
+
+    return False
+
+
 def get_security_warnings(message):
     text = message.lower()
     warnings = []
 
-    macro_terms = [
-        "enable macro",
-        "enable macros",
-        "turn on macros",
-        "allow macros",
-    ]
-
-    if any(term in text for term in macro_terms):
+    if has_positive_macro_instruction(text):
         warnings.append(
-            "This message asks you to enable macros. Unexpected "
-            "macro-enabled documents can execute dangerous code. "
-            "Verify the document and its source independently."
+            "This message appears to instruct you to enable macros. "
+            "Unexpected macro-enabled documents can execute dangerous "
+            "code. Verify the document and its source independently."
         )
 
-    sensitive_terms = [
-        "password",
-        "passcode",
-        "one-time password",
-        "otp",
-        "verification code",
-        "authentication code",
-        "security code",
-        "cvv",
-        "card number",
-        "expiry date",
-        "expiration date",
-    ]
-
-    if any(term in text for term in sensitive_terms):
+    if requests_sensitive_information(text):
+        warnings.append(
+            "This message may ask you to disclose sensitive information. "
+            "Never share passwords, authentication codes, or payment-card "
+            "security details in response to an unexpected request. "
+            "Verify through the organization's official channel."
+        )
+    elif contains_term(text, CREDENTIAL_TERMS):
         warnings.append(
             "This message mentions passwords, verification codes, "
-            "or payment-card details. Never share sensitive information "
-            "in response to an unexpected request. Verify through "
-            "the organization's official channel."
+            "or payment-card details. A mention alone does not mean "
+            "the sender is requesting them. Never disclose sensitive "
+            "information in response to an unexpected request."
         )
 
-    suspicious_offer_terms = [
-        "guaranteed income",
-        "guaranteed return",
-        "receive $",
-        "earn money instantly",
-        "double your money",
-    ]
-
-    if any(term in text for term in suspicious_offer_terms):
+    if contains_term(text, SUSPICIOUS_OFFER_TERMS):
         warnings.append(
-            "This message may promote a suspicious financial offer. "
-            "Guaranteed or unusually high returns are warning signs. "
-            "Verify the offer independently before sending money."
+            "This message contains wording associated with potentially "
+            "suspicious financial offers. Guaranteed or unusually high "
+            "returns are warning signs. Verify the offer independently "
+            "before sending money."
         )
 
     return warnings
@@ -103,64 +291,22 @@ def get_risk_assessment(message):
     text = message.lower()
     findings = []
 
-    # Detect requests to disclose passwords or authentication codes.
-    credential_terms = [
-        "password",
-        "passcode",
-        "one-time password",
-        "otp",
-        "verification code",
-        "authentication code",
-        "security code",
-        "cvv",
-        "card number",
-        "expiry date",
-        "expiration date",
-    ]
-
-    disclosure_actions = [
-        "send",
-        "share",
-        "provide",
-        "enter",
-        "submit",
-        "reply with",
-        "give us",
-        "give me",
-    ]
-
-    has_sensitive_term = any(
-        term in text for term in credential_terms
-    )
-
-    has_disclosure_action = any(
-        action in text for action in disclosure_actions
-    )
-
-    if has_sensitive_term and has_disclosure_action:
+    if requests_sensitive_information(text):
         findings.append(
             {
                 "level": "high",
                 "title": "Sensitive-information request",
                 "detail": (
-                    "The message appears to ask for sensitive "
-                    "information. Do not send passwords, authentication "
-                    "codes, or payment-card security details through "
-                    "an unexpected message. Verify using an official "
-                    "channel you access independently."
+                    "The message appears to ask for sensitive information. "
+                    "Do not send passwords, authentication codes, or "
+                    "payment-card security details through an unexpected "
+                    "message. Verify using an official channel you access "
+                    "independently."
                 ),
             }
         )
 
-    # Detect unexpected requests to enable document macros.
-    macro_terms = [
-        "enable macro",
-        "enable macros",
-        "turn on macros",
-        "allow macros",
-    ]
-
-    if any(term in text for term in macro_terms):
+    if has_positive_macro_instruction(text):
         findings.append(
             {
                 "level": "high",
@@ -173,16 +319,7 @@ def get_risk_assessment(message):
             }
         )
 
-    # Detect potentially deceptive financial promises.
-    suspicious_offer_terms = [
-        "guaranteed income",
-        "guaranteed return",
-        "receive $",
-        "earn money instantly",
-        "double your money",
-    ]
-
-    if any(term in text for term in suspicious_offer_terms):
+    if contains_term(text, SUSPICIOUS_OFFER_TERMS):
         findings.append(
             {
                 "level": "elevated",
@@ -395,7 +532,7 @@ if st.session_state.initial_scores is not None:
     show_assessment(initial_scores)
     show_scores(initial_scores)
 
-    # These checks remain separate from the AI prediction.
+    # Keep rule-based checks separate from the AI prediction.
     show_security_warnings(original_message)
     show_risk_assessment(original_message)
 
