@@ -183,56 +183,113 @@ def has_sensitive_term(clause):
     return contains_term(clause, CREDENTIAL_TERMS)
 
 
+
+       
+   
+
 def requests_sensitive_information(message):
-    clauses = split_clauses(message)
+    text = message.lower()
+    clauses = split_clauses(text)
 
-    sensitive_indexes = [
-        index
-        for index, clause in enumerate(clauses)
-        if has_sensitive_term(clause)
-    ]
+    # Find credential terms and disclosure actions separately.
+    # An action should be reasonably close to a credential term.
+    credential_pattern = (
+        r"(?<!\w)(?:"
+        + "|".join(
+            re.escape(term)
+            for term in sorted(
+                CREDENTIAL_TERMS,
+                key=len,
+                reverse=True
+            )
+        )
+        + r")(?!\w)"
+    )
 
-    if not sensitive_indexes:
-        return False
+    action_pattern = r"(?<!\w)" + DISCLOSURE_VERB_PATTERN + r"(?!\w)"
 
-    for index in sensitive_indexes:
-        clause = clauses[index]
+    for clause in clauses:
+        credential_matches = list(
+            re.finditer(credential_pattern, clause)
+        )
 
-        if find_positive_actions(clause):
-            return True
+        if not credential_matches:
+            continue
 
-        # Catch common direct requests, including:
-        # "enter your password"
-        # "entering your password"
-        # "reply with your verification code"
-        # "provide your card number"
-        direct_request_patterns = [
-            r"\b(?:ask|asks|asked|asking)\b.{0,45}\b"
-            + DISCLOSURE_VERB_PATTERN + r"\b",
+        action_matches = list(
+            re.finditer(action_pattern, clause)
+        )
 
-            r"\b(?:need|needs|needed|needing|want|wants|"
-            r"wanted|require|requires|required|request|"
-            r"requests|requested)\b.{0,45}\b"
-            + DISCLOSURE_VERB_PATTERN + r"\b",
+        for action_match in action_matches:
+            if is_negated_action(clause, action_match.start()):
+                continue
 
+            # Avoid linking an unrelated action to a credential
+            # mentioned elsewhere in a long clause.
+            nearby_credential = any(
+                abs(
+                    action_match.start()
+                    - credential_match.start()
+                ) <= 60
+                or (
+                    action_match.end() <= credential_match.start()
+                    and credential_match.start()
+                    - action_match.end() <= 60
+                )
+                for credential_match in credential_matches
+            )
+
+            if nearby_credential:
+                return True
+
+        # Handle common indirect requests such as:
+        # "You need to send your verification code."
+        # "Please reply with your password."
+        indirect_patterns = [
+            (
+                r"\b(?:ask|asks|asked|asking)\b.{0,45}\b"
+                + DISCLOSURE_VERB_PATTERN
+                + r"\b"
+            ),
+            (
+                r"\b(?:need|needs|needed|needing|want|wants|"
+                r"wanted|require|requires|required|request|"
+                r"requests|requested)\b.{0,45}\b"
+                + DISCLOSURE_VERB_PATTERN
+                + r"\b"
+            ),
             r"\b(?:reply|respond)\b.{0,20}\bwith\b",
         ]
 
-        for pattern in direct_request_patterns:
+        for pattern in indirect_patterns:
             for match in re.finditer(pattern, clause):
                 action_match = re.search(
-                    DISCLOSURE_VERB_PATTERN,
-                    match.group(),
+                    action_pattern,
+                    match.group()
                 )
 
                 if action_match:
-                    absolute_start = match.start() + action_match.start()
+                    absolute_start = (
+                        match.start() + action_match.start()
+                    )
 
-                    if not is_negated_action(clause, absolute_start):
+                    if is_negated_action(
+                        clause,
+                        absolute_start
+                    ):
+                        continue
+
+                    if any(
+                        abs(
+                            absolute_start
+                            - credential_match.start()
+                        ) <= 60
+                        for credential_match in credential_matches
+                    ):
                         return True
 
-    # Handle a sensitive item mentioned in one clause and a
-    # related instruction in the following clause.
+    # Check whether an instruction in a nearby following clause
+    # refers back to a credential mentioned earlier.
     reference_terms = [
         "the code",
         "your code",
@@ -254,15 +311,26 @@ def requests_sensitive_information(message):
         "them",
     ]
 
-    for index in sensitive_indexes:
+    for index, clause in enumerate(clauses):
+        if not has_sensitive_term(clause):
+            continue
+
         for follow_up in clauses[index + 1:index + 3]:
-            if not find_positive_actions(follow_up):
+            if not contains_term(follow_up, reference_terms):
                 continue
 
-            if contains_term(follow_up, reference_terms):
-                return True
+            for action_match in re.finditer(
+                action_pattern,
+                follow_up
+            ):
+                if not is_negated_action(
+                    follow_up,
+                    action_match.start()
+                ):
+                    return True
 
     return False
+
 
 
 def has_positive_macro_instruction(message):
