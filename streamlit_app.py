@@ -658,6 +658,7 @@ def show_context_section(
         st.session_state.updated_findings = None
         st.session_state.updated_combined_text = None
         st.session_state.updated_source = None
+        st.session_state.updated_context = None
         st.session_state.reassessed = False
 
         if not additional_info.strip():
@@ -685,6 +686,7 @@ def show_context_section(
                 st.session_state.updated_findings = updated_findings
                 st.session_state.updated_combined_text = combined_text
                 st.session_state.updated_source = source
+                st.session_state.updated_context = additional_info.strip()
                 st.session_state.reassessed = True
 
             except Exception:
@@ -695,11 +697,16 @@ def show_context_section(
                     "Reassessment failed. Please try again. "
                     "If the problem continues, check the app logs."
                 )
+    inputs_match_previous_assessment = (
+        source == st.session_state.updated_source
+        and additional_info.strip() == st.session_state.updated_context
+    )
 
     if (
         st.session_state.reassessed
         and st.session_state.updated_scores is not None
         and st.session_state.updated_findings is not None
+        and inputs_match_previous_assessment
     ):
         updated_scores = st.session_state.updated_scores
         updated_findings = st.session_state.updated_findings
@@ -745,6 +752,12 @@ def show_context_section(
             updated_findings
         )
 
+    elif st.session_state.reassessed and not inputs_match_previous_assessment:
+        st.info(
+            "The source or additional information has changed since "
+            "the last reassessment. Click Reassess again to update "
+            "the results."
+        )
 
 # Main application
 st.title("🛡️ MessageGuard")
@@ -765,6 +778,7 @@ STATE_DEFAULTS = {
     "updated_findings": None,
     "updated_combined_text": None,
     "updated_source": None,
+    "updated_context": None,
     "reassessed": False,
     "analysis_version": 0,
 }
@@ -792,6 +806,7 @@ if st.button("Analyze Message", type="primary"):
     st.session_state.updated_findings = None
     st.session_state.updated_combined_text = None
     st.session_state.updated_source = None
+    st.session_state.updated_context = None
     st.session_state.reassessed = False
     st.session_state.analysis_version += 1
 
