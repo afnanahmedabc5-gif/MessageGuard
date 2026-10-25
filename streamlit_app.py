@@ -43,35 +43,63 @@ def classify_message(text):
 
 CREDENTIAL_TERMS = [
     "password",
+    "passwords",
     "passcode",
+    "passcodes",
     "one-time password",
+    "one time password",
     "otp",
     "verification code",
+    "verification codes",
     "authentication code",
+    "authentication codes",
     "security code",
+    "security codes",
+    "verify code",
+    "verification number",
+    "recovery code",
+    "recovery codes",
+    "login code",
+    "login codes",
+    "pin",
+    "pin code",
     "cvv",
+    "cvc",
     "card number",
+    "credit card number",
+    "debit card number",
     "expiry date",
     "expiration date",
+    "card security details",
 ]
 
 DISCLOSURE_ACTIONS = [
-    "reply with",
-    "give us",
-    "give me",
-    "send",
-    "share",
-    "provide",
-    "enter",
-    "submit",
-    "disclose",
-    "type",
+    r"send(?:ing|s)?",
+    r"share(?:d|s|ing)?",
+    r"provid(?:e|es|ed|ing)",
+    r"enter(?:s|ed|ing)?",
+    r"submit(?:s|ted|ting)?",
+    r"type(?:s|d|ing)?",
+    r"disclos(?:e|es|ed|ing)",
+    r"giv(?:e|es|en|ing)",
+    r"tell(?:s|ing|t)?",
+    r"upload(?:s|ed|ing)?",
+    r"reveal(?:s|ed|ing)?",
+    r"supply(?:s|ied|ying)?",
+    r"divulg(?:e|es|ed|ing)",
+    r"forward(?:s|ed|ing)?",
+    r"reply(?:ing|ies|ied)?",
+    r"confirm(?:s|ed|ing)?",
 ]
 
 MACRO_TERMS = [
     "enable macro",
     "enable macros",
+    "enabling macro",
+    "enabling macros",
+    "turn on macro",
     "turn on macros",
+    "allow macro",
     "allow macros",
 ]
 
@@ -83,10 +111,28 @@ SUSPICIOUS_OFFER_TERMS = [
     "double your money",
 ]
 
+NEGATION_WORDING = (
+    r"(?:never|not|don't|do not|doesn't|does not|"
+    r"didn't|did not|shouldn't|should not|mustn't|"
+    r"must not|cannot|can't|avoid|refrain from)"
+)
+
+DISCLOSURE_VERB_PATTERN = (
+    r"(?:send(?:ing|s)?|share(?:d|s|ing)?|"
+    r"provid(?:e|es|ed|ing)|enter(?:s|ed|ing)?|"
+    r"submit(?:s|ted|ting)?|type(?:s|d|ing)?|"
+    r"disclos(?:e|es|ed|ing)|giv(?:e|es|en|ing)|"
+    r"tell(?:s|ing|t)?|upload(?:s|ed|ing)?|"
+    r"reveal(?:s|ed|ing)?|supply(?:s|ied|ying)?|"
+    r"divulg(?:e|es|ed|ing)|forward(?:s|ed|ing)?|"
+    r"reply(?:ing|ies|ied)?|confirm(?:s|ed|ing)?)"
+)
+
 
 def contains_term(text, terms):
     for term in terms:
         pattern = r"(?<!\w)" + re.escape(term) + r"(?!\w)"
+
         if re.search(pattern, text, re.IGNORECASE):
             return True
 
@@ -96,56 +142,24 @@ def contains_term(text, terms):
 def split_clauses(text):
     return [
         part.strip()
-        for part in re.split(r"[.!?;\n]+", text.lower())
+        for part in re.split(r"[.!?;\n,]+", text.lower())
         if part.strip()
     ]
 
 
 def is_negated_action(clause, action_start):
-    """
-    Check whether an action is preceded by wording such as
-    'never send', 'do not share', or 'will never ask you to share'.
-    """
     prefix = clause[:action_start]
 
-    # Only examine the words immediately before the action.
-    prefix_words = prefix.split()[-9:]
-
-    if not prefix_words:
-        return False
-
-    recent_prefix = " ".join(prefix_words)
-
-    negation_pattern = (
-        r"\b(?:"
-        r"never|"
-        r"not|"
-        r"don't|"
-        r"do not|"
-        r"doesn't|"
-        r"does not|"
-        r"didn't|"
-        r"did not|"
-        r"shouldn't|"
-        r"should not|"
-        r"mustn't|"
-        r"must not|"
-        r"cannot|"
-        r"can't|"
-        r"avoid"
-        r")\b"
-    )
-
-    if not re.search(negation_pattern, recent_prefix):
-        return False
-
-    # Handle constructions such as:
-    # "Your bank will never ask you to share your code."
     if re.search(
-        r"\b(?:never|not|don't|do not|doesn't|does not|"
-        r"didn't|did not|shouldn't|should not|mustn't|"
-        r"must not|cannot|can't|avoid)\b",
-        recent_prefix,
+        NEGATION_WORDING + r"\s+(?:\w+\s+){0,4}$",
+        prefix
+    ):
+        return True
+
+    if re.search(
+        r"\b(?:dangerous|unsafe|risky|unwise)\s+to\s+"
+        r"(?:\w+\s+){0,2}$",
+        prefix
     ):
         return True
 
@@ -153,11 +167,10 @@ def is_negated_action(clause, action_start):
 
 
 def find_positive_actions(clause):
-    """Return disclosure actions that are not locally negated."""
     actions = []
 
     for action in DISCLOSURE_ACTIONS:
-        pattern = r"(?<!\w)" + re.escape(action) + r"(?!\w)"
+        pattern = r"(?<!\w)" + action + r"(?!\w)"
 
         for match in re.finditer(pattern, clause):
             if not is_negated_action(clause, match.start()):
@@ -166,31 +179,60 @@ def find_positive_actions(clause):
     return actions
 
 
+def has_sensitive_term(clause):
+    return contains_term(clause, CREDENTIAL_TERMS)
+
+
 def requests_sensitive_information(message):
-    """
-    Detect a likely request to disclose sensitive information.
-    A sensitive term alone, or an unrelated action alone, is
-    not enough to trigger this finding.
-    """
     clauses = split_clauses(message)
 
-    sensitive_clauses = [
-        clause
-        for clause in clauses
-        if contains_term(clause, CREDENTIAL_TERMS)
+    sensitive_indexes = [
+        index
+        for index, clause in enumerate(clauses)
+        if has_sensitive_term(clause)
     ]
 
-    if not sensitive_clauses:
+    if not sensitive_indexes:
         return False
 
-    # First check whether a sensitive term and a positive
-    # disclosure action appear in the same clause.
-    for clause in sensitive_clauses:
+    for index in sensitive_indexes:
+        clause = clauses[index]
+
         if find_positive_actions(clause):
             return True
 
-    # Then check for a follow-up instruction referring to
-    # information mentioned in an earlier clause.
+        # Catch common direct requests, including:
+        # "enter your password"
+        # "entering your password"
+        # "reply with your verification code"
+        # "provide your card number"
+        direct_request_patterns = [
+            r"\b(?:ask|asks|asked|asking)\b.{0,45}\b"
+            + DISCLOSURE_VERB_PATTERN + r"\b",
+
+            r"\b(?:need|needs|needed|needing|want|wants|"
+            r"wanted|require|requires|required|request|"
+            r"requests|requested)\b.{0,45}\b"
+            + DISCLOSURE_VERB_PATTERN + r"\b",
+
+            r"\b(?:reply|respond)\b.{0,20}\bwith\b",
+        ]
+
+        for pattern in direct_request_patterns:
+            for match in re.finditer(pattern, clause):
+                action_match = re.search(
+                    DISCLOSURE_VERB_PATTERN,
+                    match.group(),
+                )
+
+                if action_match:
+                    absolute_start = match.start() + action_match.start()
+
+                    if not is_negated_action(clause, absolute_start):
+                        return True
+
+    # Handle a sensitive item mentioned in one clause and a
+    # related instruction in the following clause.
     reference_terms = [
         "the code",
         "your code",
@@ -199,6 +241,8 @@ def requests_sensitive_information(message):
         "your password",
         "the passcode",
         "your passcode",
+        "the pin",
+        "your pin",
         "the cvv",
         "your cvv",
         "the card number",
@@ -210,12 +254,7 @@ def requests_sensitive_information(message):
         "them",
     ]
 
-    for index, clause in enumerate(clauses):
-        if not contains_term(clause, CREDENTIAL_TERMS):
-            continue
-
-        # Only inspect the next two clauses for a related
-        # instruction, rather than unrelated text anywhere.
+    for index in sensitive_indexes:
         for follow_up in clauses[index + 1:index + 3]:
             if not find_positive_actions(follow_up):
                 continue
@@ -231,16 +270,37 @@ def has_positive_macro_instruction(message):
         if not contains_term(clause, MACRO_TERMS):
             continue
 
-        # Treat direct warnings such as "Do not enable macros"
-        # as warnings, not as instructions to enable them.
-        macro_actions = [
-            "enable macro",
-            "enable macros",
-            "turn on macros",
-            "allow macros",
+        # A warning about enabling macros is not an instruction
+        # to enable them.
+        warning_patterns = [
+            r"\bdo not\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bdon't\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bnever\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bshould not\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bshouldn't\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bmust not\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bmustn't\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\bavoid\b.{0,30}\benabl(?:e|ing)\s+macros?\b",
+            r"\b(?:dangerous|unsafe|risky)\s+to\s+"
+            r"enabl(?:e|ing)\s+macros?\b",
         ]
 
-        for action in macro_actions:
+        if any(
+            re.search(pattern, clause)
+            for pattern in warning_patterns
+        ):
+            continue
+
+        for action in [
+            "enable macro",
+            "enable macros",
+            "enabling macro",
+            "enabling macros",
+            "turn on macro",
+            "turn on macros",
+            "allow macro",
+            "allow macros",
+        ]:
             pattern = r"(?<!\w)" + re.escape(action) + r"(?!\w)"
 
             for match in re.finditer(pattern, clause):
@@ -349,12 +409,16 @@ def needs_more_information(message, scores):
         scores[1]["score"] if len(scores) > 1 else 0.0
     )
     margin = top_score - second_score
+    label = get_label(scores)
 
     _, risk_findings = get_risk_assessment(message)
 
+    # Recommend context for rule-based findings, suspicious AI
+    # classifications, or a comparatively uncertain prediction.
+    # A credential mention alone does not trigger this prompt.
     return (
-        bool(get_security_warnings(message))
-        or bool(risk_findings)
+        bool(risk_findings)
+        or label in ("phishing", "spam")
         or top_score < 0.75
         or margin < 0.20
     )
@@ -462,7 +526,6 @@ st.write(
 )
 
 
-# Initialize session state.
 if "original_message" not in st.session_state:
     st.session_state.original_message = ""
 
@@ -491,7 +554,6 @@ message = st.text_area(
 
 
 if st.button("Analyze Message", type="primary"):
-    # Clear previous results.
     st.session_state.original_message = ""
     st.session_state.initial_scores = None
     st.session_state.request_context = False
@@ -532,15 +594,14 @@ if st.session_state.initial_scores is not None:
     show_assessment(initial_scores)
     show_scores(initial_scores)
 
-    # Keep rule-based checks separate from the AI prediction.
     show_security_warnings(original_message)
     show_risk_assessment(original_message)
 
     if st.session_state.request_context:
         st.warning(
-            "Additional context is recommended because the AI "
-            "prediction may be uncertain or the message contains "
-            "warning signs."
+            "Additional context may help interpret this result. "
+            "The prediction and rule-based findings should be "
+            "considered alongside independently verified context."
         )
 
         st.write(
