@@ -1,8 +1,12 @@
 
+import re
 import streamlit as st
 from transformers import pipeline
 
-st.set_page_config(page_title="MessageGuard", page_icon="🛡️")
+st.set_page_config(
+    page_title="MessageGuard",
+    page_icon="🛡️"
+)
 
 
 @st.cache_resource
@@ -14,7 +18,11 @@ def load_model():
 
 
 def classify_message(text):
-    results = load_model()(text, truncation=True, top_k=None)
+    results = load_model()(
+        text,
+        truncation=True,
+        top_k=None
+    )
 
     if results and isinstance(results[0], list):
         scores = results[0]
@@ -37,30 +45,38 @@ def get_security_warnings(message):
     text = message.lower()
     warnings = []
 
-    if "enable macro" in text:
+    macro_terms = [
+        "enable macro",
+        "enable macros",
+        "turn on macros",
+        "allow macros",
+    ]
+
+    if any(term in text for term in macro_terms):
         warnings.append(
             "This message asks you to enable macros. Unexpected "
             "macro-enabled documents can execute dangerous code. "
             "Verify the document and its source independently."
         )
 
-    credential_terms = [
+    sensitive_terms = [
         "password",
         "passcode",
         "one-time password",
         "otp",
         "verification code",
         "authentication code",
-        "cvv",
         "security code",
+        "cvv",
         "card number",
         "expiry date",
+        "expiration date",
     ]
 
-    if any(term in text for term in credential_terms):
+    if any(term in text for term in sensitive_terms):
         warnings.append(
             "This message mentions passwords, verification codes, "
-            "or payment-card details. Never share sensitive details "
+            "or payment-card details. Never share sensitive information "
             "in response to an unexpected request. Verify through "
             "the organization's official channel."
         )
@@ -75,21 +91,133 @@ def get_security_warnings(message):
 
     if any(term in text for term in suspicious_offer_terms):
         warnings.append(
-            "This message may be promoting a suspicious financial "
-            "offer. Guaranteed or unusually high returns are a warning "
-            "sign. Verify the offer independently before sending money."
+            "This message may promote a suspicious financial offer. "
+            "Guaranteed or unusually high returns are warning signs. "
+            "Verify the offer independently before sending money."
         )
 
     return warnings
 
 
+def get_risk_assessment(message):
+    text = message.lower()
+    findings = []
+
+    # Detect requests to disclose passwords or authentication codes.
+    credential_terms = [
+        "password",
+        "passcode",
+        "one-time password",
+        "otp",
+        "verification code",
+        "authentication code",
+        "security code",
+        "cvv",
+        "card number",
+        "expiry date",
+        "expiration date",
+    ]
+
+    disclosure_actions = [
+        "send",
+        "share",
+        "provide",
+        "enter",
+        "submit",
+        "reply with",
+        "give us",
+        "give me",
+    ]
+
+    has_sensitive_term = any(
+        term in text for term in credential_terms
+    )
+
+    has_disclosure_action = any(
+        action in text for action in disclosure_actions
+    )
+
+    if has_sensitive_term and has_disclosure_action:
+        findings.append(
+            {
+                "level": "high",
+                "title": "Sensitive-information request",
+                "detail": (
+                    "The message appears to ask for sensitive "
+                    "information. Do not send passwords, authentication "
+                    "codes, or payment-card security details through "
+                    "an unexpected message. Verify using an official "
+                    "channel you access independently."
+                ),
+            }
+        )
+
+    # Detect unexpected requests to enable document macros.
+    macro_terms = [
+        "enable macro",
+        "enable macros",
+        "turn on macros",
+        "allow macros",
+    ]
+
+    if any(term in text for term in macro_terms):
+        findings.append(
+            {
+                "level": "high",
+                "title": "Potentially dangerous document instruction",
+                "detail": (
+                    "Enabling macros in an unexpected document can "
+                    "execute malicious code. Do not enable them unless "
+                    "the document and its source have been verified."
+                ),
+            }
+        )
+
+    # Detect potentially deceptive financial promises.
+    suspicious_offer_terms = [
+        "guaranteed income",
+        "guaranteed return",
+        "receive $",
+        "earn money instantly",
+        "double your money",
+    ]
+
+    if any(term in text for term in suspicious_offer_terms):
+        findings.append(
+            {
+                "level": "elevated",
+                "title": "Suspicious financial offer",
+                "detail": (
+                    "The message contains language associated with "
+                    "potentially deceptive financial offers. Check the "
+                    "claims and organization independently before "
+                    "sending money."
+                ),
+            }
+        )
+
+    if any(item["level"] == "high" for item in findings):
+        overall_level = "high"
+    elif findings:
+        overall_level = "elevated"
+    else:
+        overall_level = "no_rule_triggered"
+
+    return overall_level, findings
+
+
 def needs_more_information(message, scores):
     top_score = scores[0]["score"]
-    second_score = scores[1]["score"] if len(scores) > 1 else 0.0
+    second_score = (
+        scores[1]["score"] if len(scores) > 1 else 0.0
+    )
     margin = top_score - second_score
+
+    _, risk_findings = get_risk_assessment(message)
 
     return (
         bool(get_security_warnings(message))
+        or bool(risk_findings)
         or top_score < 0.75
         or margin < 0.20
     )
@@ -105,7 +233,7 @@ def show_assessment(scores):
     if label == "phishing":
         st.error("⚠️ Potential Phishing Detected")
         st.write(
-            "The model identified patterns associated with phishing."
+            "The AI model identified patterns associated with phishing."
         )
         st.write(
             "**Advice:** Avoid suspicious links and never share "
@@ -115,35 +243,39 @@ def show_assessment(scores):
     elif label == "spam":
         st.warning("⚠️ Potential Spam Detected")
         st.write(
-            "The model identified patterns associated with spam."
+            "The AI model identified patterns associated with spam."
         )
         st.write(
             "**Advice:** Be cautious with unsolicited offers and links."
         )
 
     elif label == "ham":
-        st.success("✅ Likely Legitimate")
+        st.success("✅ Likely Legitimate — AI Prediction")
         st.write(
-            "The model did not classify this message as phishing or spam."
+            "The AI model did not classify this message as phishing "
+            "or spam. This does not establish that the message is safe."
         )
         st.write(
-            "**Advice:** This prediction is not a guarantee of safety. "
-            "Verify unusual requests independently."
+            "**Advice:** Verify unusual requests independently."
         )
 
     else:
-        st.info("The model returned an unrecognized classification.")
+        st.info(
+            "The AI model returned an unrecognized classification."
+        )
 
 
 def show_scores(scores):
-    with st.expander("Model scores (testing only)"):
+    with st.expander("AI model scores (testing only)"):
         st.write(
             "These are relative model output scores, not verified "
             "probabilities that the classification is correct."
         )
 
         for item in scores:
-            st.write(f'{item["label"]}: {item["score"]:.4f}')
+            st.write(
+                f'{item["label"]}: {item["score"]:.4f}'
+            )
 
 
 def show_security_warnings(message):
@@ -151,6 +283,38 @@ def show_security_warnings(message):
 
     for warning in warnings:
         st.warning(f"🛡️ Security warning: {warning}")
+
+
+def show_risk_assessment(message):
+    level, findings = get_risk_assessment(message)
+
+    st.subheader("Independent Rule-Based Risk Checks")
+
+    st.caption(
+        "These checks use message wording and predefined rules. "
+        "They do not verify the sender or prove that a message "
+        "is malicious."
+    )
+
+    if level == "high":
+        st.error(
+            "High-risk warning: the message contains a pattern "
+            "that warrants particular caution."
+        )
+    elif level == "elevated":
+        st.warning(
+            "Caution: the message contains a potentially suspicious "
+            "pattern that should be checked."
+        )
+    else:
+        st.info(
+            "No high-risk pattern was detected by the current rules. "
+            "This does not mean the message is safe."
+        )
+
+    for finding in findings:
+        st.markdown(f'**{finding["title"]}**')
+        st.write(finding["detail"])
 
 
 st.title("🛡️ MessageGuard")
@@ -190,7 +354,7 @@ message = st.text_area(
 
 
 if st.button("Analyze Message", type="primary"):
-    # Clear all results from the previous analysis.
+    # Clear previous results.
     st.session_state.original_message = ""
     st.session_state.initial_scores = None
     st.session_state.request_context = False
@@ -209,8 +373,8 @@ if st.button("Analyze Message", type="primary"):
 
             st.session_state.original_message = cleaned_message
             st.session_state.initial_scores = scores
-            st.session_state.request_context = needs_more_information(
-                cleaned_message, scores
+            st.session_state.request_context = (
+                needs_more_information(cleaned_message, scores)
             )
 
         except Exception:
@@ -227,24 +391,26 @@ if st.session_state.initial_scores is not None:
     st.caption("Message currently being assessed:")
     st.code(original_message)
 
-    # Security warnings are independent of the AI classification.
-    show_security_warnings(original_message)
-
-    # Always display the initial prediction and scores.
-    st.subheader("Initial Assessment")
+    st.subheader("Initial AI Assessment")
     show_assessment(initial_scores)
     show_scores(initial_scores)
 
+    # These checks remain separate from the AI prediction.
+    show_security_warnings(original_message)
+    show_risk_assessment(original_message)
+
     if st.session_state.request_context:
         st.warning(
-            "Additional context is recommended because the prediction "
-            "may be uncertain or the message contains warning signs."
+            "Additional context is recommended because the AI "
+            "prediction may be uncertain or the message contains "
+            "warning signs."
         )
 
         st.write(
-            "Only provide non-sensitive context, such as whether you "
-            "expected the message or independently verified the sender. "
-            "Never enter passwords, verification codes, or card details."
+            "Provide only non-sensitive context, such as whether "
+            "you expected the message or verified the sender through "
+            "an official channel. Never enter passwords, verification "
+            "codes, or payment-card details."
         )
 
         additional_info = st.text_area(
@@ -254,13 +420,16 @@ if st.session_state.initial_scores is not None:
                 "Did you verify the sender through an official channel?"
             ),
             max_chars=5000,
-            key=f"additional_info_{st.session_state.analysis_version}"
+            key=(
+                f"additional_info_"
+                f"{st.session_state.analysis_version}"
+            )
         )
 
         if st.button("Reassess with Additional Information"):
             if not additional_info.strip():
                 st.warning(
-                    "Please provide relevant non-sensitive context first."
+                    "Please provide relevant, non-sensitive context first."
                 )
             else:
                 combined_text = (
@@ -283,22 +452,24 @@ if st.session_state.initial_scores is not None:
                     )
 
         if st.session_state.reassessed:
-            st.subheader("Updated Assessment")
-            show_assessment(st.session_state.final_scores)
-            show_scores(st.session_state.final_scores)
+            final_scores = st.session_state.final_scores
+
+            st.subheader("Updated AI Assessment")
+            show_assessment(final_scores)
+            show_scores(final_scores)
 
             initial_label = get_label(initial_scores)
-            updated_label = get_label(st.session_state.final_scores)
+            updated_label = get_label(final_scores)
 
             if initial_label == updated_label:
                 st.info(
-                    f"The model returned the same label both times: "
+                    f"The AI model returned the same label both times: "
                     f"{initial_label}. This does not independently "
                     "confirm that the label is correct."
                 )
             else:
                 st.info(
-                    f"The model's label changed from {initial_label} "
+                    f"The AI model's label changed from {initial_label} "
                     f"to {updated_label} after context was added. "
                     "A changed prediction is not proof that the updated "
                     "prediction is correct."
@@ -314,5 +485,6 @@ if st.session_state.initial_scores is not None:
 st.divider()
 st.caption(
     "MessageGuard — AI predictions are not guarantees of safety. "
+    "Rule-based checks can miss threats or flag harmless messages. "
     "Avoid entering private or sensitive information."
 )
