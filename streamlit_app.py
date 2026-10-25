@@ -675,16 +675,12 @@ def show_context_section(
                 + additional_info.strip()
             )
 
-                     try:
+            try:
                 with st.spinner("Reassessing the message..."):
-                    # Classify the actual message, not the explanatory notes.
                     updated_scores = classify_message(original_message)
-
-                    # Apply security rules to the actual message as well.
                     _, updated_findings = get_risk_assessment(
                         original_message
                     )
-
 
                 st.session_state.updated_scores = updated_scores
                 st.session_state.updated_findings = updated_findings
