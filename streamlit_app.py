@@ -33,11 +33,21 @@ def classify_message(text):
     return scores
 
 
-def has_high_risk_indicators(message):
-    text = message.lower()
 
-    indicators = [
-        "enable macros",
+   
+def get_security_warnings(message):
+    text = message.lower()
+    warnings = []
+
+    if "enable macros" in text:
+        warnings.append(
+            "This message asks you to enable macros. "
+            "Unexpected macro-enabled documents can execute "
+            "dangerous code. Do not enable macros unless you "
+            "have independently verified the document and source."
+        )
+
+    credential_phrases = [
         "share your password",
         "send your password",
         "enter your password",
@@ -45,13 +55,18 @@ def has_high_risk_indicators(message):
         "send your otp",
         "verification code",
         "cvv",
-        "claim your prize",
-        "you have won",
-        "you have received $",
-        "guaranteed income",
     ]
 
-    return any(item in text for item in indicators)
+    if any(phrase in text for phrase in credential_phrases):
+        warnings.append(
+            "This message mentions passwords, verification codes, "
+            "or card security details. Do not share these in response "
+            "to an unexpected message. Verify the request through "
+            "the organization's official channel."
+        )
+
+    return warnings
+
 
 
 
@@ -109,6 +124,12 @@ def show_scores(scores):
         for item in scores:
             st.write(f'{item["label"]}: {item["score"]:.4f}')
 
+def show_security_warnings(message):
+    warnings = get_security_warnings(message)
+
+    for warning in warnings:
+        st.warning(f"🛡️ Security warning: {warning}")
+
 
 st.title("🛡️ MessageGuard")
 st.subheader("AI-Powered Message Safety Checker")
@@ -163,6 +184,7 @@ if st.button("Analyze Message", type="primary"):
 
 if st.session_state.initial_scores is not None:
     initial_scores = st.session_state.initial_scores
+        show_security_warnings(st.session_state.original_message)
 
     if st.session_state.request_context:
         st.warning(
