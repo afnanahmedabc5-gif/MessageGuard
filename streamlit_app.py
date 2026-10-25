@@ -182,11 +182,14 @@ if st.button("Analyze Message", type="primary"):
                 "If the problem continues, check the app logs."
             )
 
+
 if st.session_state.initial_scores is not None:
     initial_scores = st.session_state.initial_scores
-        show_security_warnings(st.session_state.original_message)
+
+    show_security_warnings(st.session_state.original_message)
 
     if st.session_state.request_context:
+
         st.warning(
             "We need more information to assess this message reliably."
         )
