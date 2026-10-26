@@ -52,6 +52,7 @@ def classify_message(text):
     )
 
 
+
 def contextual_reassess(
     original_message,
     source,
@@ -95,51 +96,82 @@ def contextual_reassess(
             "Do not assume context proves a message is safe. Consider "
             "phishing, scams, spam, impersonation, suspicious links, "
             "and harmful requests. Do not invent facts. Use 'uncertain' "
-            "when evidence is insufficient. Return only a JSON object "
-            "with these fields: label, risk_level, explanation, "
-            "context_effect, evidence. Allowed labels: phishing, spam, "
-            "ham, uncertain. Allowed risk levels: high, elevated, low, "
-            "uncertain. Evidence must be a list of strings grounded in "
-            "the supplied information.\n\n"
-            f"Assessment data:\n{json.dumps(payload, ensure_ascii=False)}"
+            "when evidence is insufficient. Keep the original classifier "
+            "prediction separate from this context-aware assessment. "
+            "Return only a JSON object with these fields: label, "
+            "risk_level, explanation, context_effect, evidence. "
+            "Allowed labels: phishing, spam, ham, uncertain. "
+            "Allowed risk levels: high, elevated, low, uncertain. "
+            "Evidence must be a list of strings grounded in the "
+            "supplied information.\n\n"
+            f"Assessment data:\n"
+            f"{json.dumps(payload, ensure_ascii=False)}"
         ),
-        config={
-            "response_mime_type": "application/json",
-            "temperature": 0.1,
-            "max_output_tokens": 600,
-        },
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.1,
+            max_output_tokens=600,
+        ),
     )
+
     content = response.text
 
     if not content:
-        raise ValueError("The context model returned an empty response.")
+        raise ValueError(
+            "The context model returned an empty response."
+        )
 
-    result = json.loads(content)
+    try:
+        result = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "The context model returned invalid JSON."
+        ) from exc
+
+    if not isinstance(result, dict):
+        raise ValueError(
+            "The context model response must be a JSON object."
+        )
 
     if result.get("label") not in {
         "phishing", "spam", "ham", "uncertain"
     }:
-        raise ValueError("The context model returned an invalid label.")
+        raise ValueError(
+            "The context model returned an invalid label."
+        )
 
     if result.get("risk_level") not in {
         "high", "elevated", "low", "uncertain"
     }:
-        raise ValueError("The context model returned an invalid risk level.")
+        raise ValueError(
+            "The context model returned an invalid risk level."
+        )
 
     for field in ("explanation", "context_effect"):
-        if not isinstance(result.get(field), str) or not result[field].strip():
-            raise ValueError(f"The context model returned invalid {field}.")
+        value = result.get(field)
 
-    if not isinstance(result.get("evidence"), list):
-        raise ValueError("The context model returned invalid evidence.")
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(
+                f"The context model returned invalid {field}."
+            )
+
+        result[field] = value.strip()
+
+    evidence = result.get("evidence")
+
+    if not isinstance(evidence, list):
+        raise ValueError(
+            "The context model returned invalid evidence."
+        )
 
     result["evidence"] = [
         item.strip()
-        for item in result["evidence"]
+        for item in evidence
         if isinstance(item, str) and item.strip()
     ][:6]
 
     return result
+
 
 
 # Information that may be sensitive when a message requests it.
@@ -686,11 +718,7 @@ def show_risk_assessment(message):
     )
 
 
-def show_context_section(
-    original_message,
-    initial_scores,
-    initial_findings
-):
+
     current_label = get_label(initial_scores)
 
     if initial_findings:
