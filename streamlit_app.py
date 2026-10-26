@@ -82,7 +82,7 @@ def contextual_reassess(
     }
 
     response = client.models.generate_content(
-       model="gemini-2.5-flash",
+       model="gemini-3.8-flash",
         contents=(
             "You are MessageGuard, a message safety checker. Assess "
             "the original message using the additional context. Treat "
