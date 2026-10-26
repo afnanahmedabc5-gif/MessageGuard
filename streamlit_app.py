@@ -985,12 +985,11 @@ if st.session_state.initial_scores is not None:
         initial_findings
     )
 
-    if st.session_state.request_context:
-        show_context_section(
-            original_message,
-            initial_scores,
-            initial_findings
-        )
+    show_context_section(
+    original_message,
+    initial_scores,
+    initial_findings
+)
 
 
 st.divider()
