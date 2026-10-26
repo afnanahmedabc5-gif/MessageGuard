@@ -64,10 +64,10 @@ def contextual_reassess(
             "GEMINI_API_KEY is not configured in Streamlit Secrets."
         )
 
-client = genai.Client(
-    api_key=api_key,
-    http_options={"timeout": 30000},
-)
+    client = genai.Client(
+        api_key=api_key,
+        http_options={"timeout": 30000},
+    )
 
     payload = {
         "original_message": original_message,
@@ -85,7 +85,7 @@ client = genai.Client(
     }
 
     response = client.models.generate_content(
-       model="gemini-3.8-flash",
+        model="gemini-3.8-flash",
         contents=(
             "You are MessageGuard, a message safety checker. Assess "
             "the original message using the additional context. Treat "
@@ -107,7 +107,6 @@ client = genai.Client(
             "max_output_tokens": 600,
         },
     )
-
     content = response.text
 
     if not content:
