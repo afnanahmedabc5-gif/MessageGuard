@@ -740,11 +740,11 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-    if st.button(
+        if st.button(
         "Reassess with Additional Information",
         key=f"reassess_{st.session_state.analysis_version}"
     ):
-        # Clear previous reassessment results before any new attempt.
+        # Clear previous reassessment results before a new attempt.
         st.session_state.updated_scores = None
         st.session_state.updated_findings = None
         st.session_state.updated_source = None
@@ -752,8 +752,7 @@ def show_context_section(
         st.session_state.context_assessment = None
         st.session_state.reassessed = False
 
-       
-                 if not additional_info.strip():
+        if not additional_info.strip():
             st.warning(
                 "Please provide relevant, non-sensitive context first."
             )
@@ -787,6 +786,7 @@ def show_context_section(
                     "Reassessment failed. Please try again. "
                     "If the problem continues, check the app logs."
                 )
+
     inputs_match_previous_assessment = (
         source == st.session_state.updated_source
         and additional_info.strip() == st.session_state.updated_context
