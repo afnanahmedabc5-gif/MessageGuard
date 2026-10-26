@@ -1,8 +1,10 @@
+
 import json
-from google.genai import types
 import logging
 import re
 
+from google import genai
+from google.genai import types
 import streamlit as st
 from transformers import pipeline
 
