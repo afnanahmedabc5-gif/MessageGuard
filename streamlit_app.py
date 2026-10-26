@@ -756,47 +756,36 @@ def show_context_section(
             st.warning(
                 "Please provide relevant, non-sensitive context first."
             )
-        else:
-                       try:
-                with st.spinner("Reassessing the message..."):
-                    logger.info("Context reassessment started")
+       else:
+    try:
+        with st.spinner("Reassessing the message..."):
+            context_result = contextual_reassess(
+                original_message,
+                source,
+                additional_info.strip(),
+                initial_scores,
+                initial_findings,
+            )
 
-                    context_result = contextual_reassess(
-                        original_message,
-                        source,
-                        additional_info.strip(),
-                        initial_scores,
-                        initial_findings,
-                    )
+            _, updated_findings = get_risk_assessment(
+                original_message
+            )
 
-                    logger.info(
-                        "Context-aware AI assessment completed"
-                    )
+        st.session_state.context_assessment = context_result
+        st.session_state.updated_scores = initial_scores
+        st.session_state.updated_findings = updated_findings
+        st.session_state.updated_source = source
+        st.session_state.updated_context = additional_info.strip()
+        st.session_state.reassessed = True
 
-                    _, updated_findings = get_risk_assessment(
-                        original_message
-                    )
-
-                    logger.info(
-                        "Rule-based risk assessment completed"
-                    )
-
-                st.session_state.context_assessment = context_result
-                st.session_state.updated_scores = initial_scores
-                st.session_state.updated_findings = updated_findings
-                st.session_state.updated_source = source
-                st.session_state.updated_context = additional_info.strip()
-                st.session_state.reassessed = True
-
-            except Exception:
-                logger.exception(
-                    "MessageGuard context reassessment failed"
-                )
-                st.error(
-                    "Reassessment failed. Please try again. "
-                    "If the problem continues, check the app logs."
-                )
-
+    except Exception:
+        logger.exception(
+            "MessageGuard context reassessment failed"
+        )
+        st.error(
+            "Reassessment failed. Please try again. "
+            "If the problem continues, check the app logs."
+        )
     inputs_match_previous_assessment = (
         source == st.session_state.updated_source
         and additional_info.strip() == st.session_state.updated_context
