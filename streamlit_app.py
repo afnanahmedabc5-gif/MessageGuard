@@ -157,9 +157,12 @@ def contextual_reassess(
 
         result[field] = value.strip()
 
-    evidence = result.get("evidence")
+        evidence = result.get("evidence")
 
-    if not isinstance(evidence, list):
+    if (
+        not isinstance(evidence, list)
+        or not all(isinstance(item, str) for item in evidence)
+    ):
         raise ValueError(
             "The context model returned invalid evidence."
         )
@@ -167,7 +170,7 @@ def contextual_reassess(
     result["evidence"] = [
         item.strip()
         for item in evidence
-        if isinstance(item, str) and item.strip()
+        if item.strip()
     ][:6]
 
     return result
