@@ -5,3 +5,4 @@ Flask
 waitress
 huggingface_hub
 google-genai
+groq
