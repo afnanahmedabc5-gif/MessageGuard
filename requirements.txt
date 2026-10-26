@@ -4,3 +4,4 @@ torch
 Flask
 waitress
 huggingface_hub
+google-genai
