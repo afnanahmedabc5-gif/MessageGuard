@@ -69,7 +69,7 @@ def contextual_reassess(
 
     client = genai.Client(
         api_key=api_key,
-        http_options={"timeout": 30000},
+        http_options={"timeout": 120000},
     )
 
     payload = {
