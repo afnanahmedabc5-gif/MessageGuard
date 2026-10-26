@@ -740,7 +740,7 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-        if st.button(
+if st.button(
         "Reassess with Additional Information",
         key=f"reassess_{st.session_state.analysis_version}"
     ):
