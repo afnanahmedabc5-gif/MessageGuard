@@ -757,9 +757,10 @@ def show_context_section(
                 "Please provide relevant, non-sensitive context first."
             )
         else:
-            try:
+                       try:
                 with st.spinner("Reassessing the message..."):
                     logger.info("Context reassessment started")
+
                     context_result = contextual_reassess(
                         original_message,
                         source,
@@ -767,13 +768,18 @@ def show_context_section(
                         initial_scores,
                         initial_findings,
                     )
-                                                          logger.info("Context-aware AI assessment completed")
+
+                    logger.info(
+                        "Context-aware AI assessment completed"
+                    )
 
                     _, updated_findings = get_risk_assessment(
                         original_message
                     )
 
-                    logger.info("Rule-based risk assessment completed")
+                    logger.info(
+                        "Rule-based risk assessment completed"
+                    )
 
                 st.session_state.context_assessment = context_result
                 st.session_state.updated_scores = initial_scores
