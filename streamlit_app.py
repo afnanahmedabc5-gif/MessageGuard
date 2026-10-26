@@ -719,57 +719,7 @@ def show_risk_assessment(message):
 
 
 
-    current_label = get_label(initial_scores)
-
-    if initial_findings:
-        st.warning(
-            "Additional context may help interpret this result. "
-            "The independent rule-based checks also detected "
-            "a pattern that warrants caution."
-        )
-    elif current_label in ("phishing", "spam"):
-        st.warning(
-            f"The AI model classified this message as {current_label}, "
-            "but the independent rule-based checks did not detect "
-            "one of their configured warning patterns. This does not "
-            "prove that the message is safe or malicious."
-        )
-    else:
-        st.warning(
-            "The AI model's result may be uncertain. Additional context "
-            "may help, but it cannot guarantee a correct assessment."
-        )
-
-    st.write(
-        "Provide only non-sensitive context. For example, say whether "
-        "you expected the message or independently verified the sender. "
-        "Do not enter passwords, verification codes, payment-card "
-        "details, or private identifiers."
-    )
-
-    source = st.selectbox(
-        "Where did the message arrive?",
-        [
-            "SMS",
-            "WhatsApp",
-            "Email",
-            "Social media",
-            "Phone call or voicemail",
-            "Other / unknown",
-        ],
-        key=f"message_source_{st.session_state.analysis_version}"
-    )
-
-    additional_info = st.text_area(
-        "Additional information (optional)",
-        placeholder=(
-            "Were you expecting the message? Did you verify the sender "
-            "through an official channel? Avoid sensitive details."
-        ),
-        max_chars=5000,
-        key=f"additional_info_{st.session_state.analysis_version}"
-    )
-
+    
 
 def show_context_section(
     original_message,
