@@ -1018,8 +1018,7 @@ if st.session_state.initial_scores is not None:
     st.code(original_message)
 
     show_assessment(initial_scores, "Initial AI Assessment")
-    show_scores(initial_scores)
-
+    
     show_rule_assessment(
         original_message,
         "Rule-Based Checks — Original Message",
