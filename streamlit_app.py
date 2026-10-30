@@ -742,7 +742,7 @@ def show_context_section(
     "codes, payment details, or other sensitive information."
 )
 
-        additional_info = st.text_area(
+   additional_info = st.text_area(
         "Additional Information",
         placeholder=(
             "Were you expecting the message? Did you verify the sender "
