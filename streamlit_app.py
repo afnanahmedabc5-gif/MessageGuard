@@ -769,8 +769,9 @@ def show_context_section(
 
     with right_col:
        st.button(
-           "Clear Message",
-           on_click=clear_main_message
+            "Clear Context",
+            key=f"clear_context_{st.session_state.analysis_version}",
+            on_click=clear_additional_information
     )
     if st.button(
         "Reassess with Additional Information",
