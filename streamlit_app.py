@@ -939,9 +939,9 @@ message = st.text_area(
     key="message_input"
 )
 
-    left_col, right_col = st.columns([4, 1])
+left_col, right_col = st.columns([4, 1])
 
-    with right_col:
+with right_col:
         st.button(
             "Clear Additional Information",
             key=f"clear_additional_{st.session_state.analysis_version}",
