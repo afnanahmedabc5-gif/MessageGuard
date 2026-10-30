@@ -782,7 +782,7 @@ def show_context_section(
         key=f"message_source_{st.session_state.analysis_version}"
     )
 
-       additional_info = st.text_area(
+    additional_info = st.text_area(
         "Additional information (optional)",
         placeholder=(
             "Were you expecting the message? Did you verify the sender "
