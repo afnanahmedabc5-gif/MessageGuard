@@ -871,12 +871,6 @@ def show_context_section(
             "have not been independently verified."
         )
 
-        show_rule_assessment(
-            original_message,
-            "Rule-Based Checks — Original Message",
-            initial_findings
-        )
-
     elif (
         st.session_state.reassessed
         and not inputs_match_previous_assessment
