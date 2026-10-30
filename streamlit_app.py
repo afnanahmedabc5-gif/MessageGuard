@@ -765,15 +765,13 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-left_col, right_col = st.columns([4, 1])
+   left_col, right_col = st.columns([4, 1])
 
-with right_col:
-    st.button(
-        "Clear Additional Information",
-        key=f"clear_additional_{st.session_state.analysis_version}",
-        on_click=clear_additional_information
+   with right_col:
+       st.button(
+           "Clear Message",
+           on_click=clear_main_message
     )
-
     if st.button(
         "Reassess with Additional Information",
         key=f"reassess_{st.session_state.analysis_version}"
