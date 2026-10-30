@@ -678,34 +678,28 @@ def show_rule_assessment(message, title, findings):
     level = get_rule_level(findings)
 
     st.subheader(title)
-    st.caption(
-        "These checks use message wording and predefined rules. "
-        "They do not verify the sender or prove that a message "
-        "is malicious."
-    )
 
     if level == "high":
         st.error(
-            "High-risk warning: the message contains a pattern "
-            "that warrants particular caution."
+            "High-risk warning: a security-related pattern was detected."
         )
     elif level == "elevated":
         st.warning(
-            "Caution: the message contains a potentially suspicious "
-            "pattern that should be checked."
+            "A potentially suspicious pattern was detected. "
+            "Review the finding below."
         )
     else:
-        st.info(
-            "No configured warning pattern was detected. "
-            "This does not mean the message is safe."
-        )
+        st.info("No configured warning pattern was detected.")
 
-    if not findings:
-        return
+    if findings:
+        for finding in findings:
+            st.markdown(f'**{finding["title"]}**')
+            st.write(finding["detail"])
+    else:
+        warnings = get_security_warnings(message, findings)
 
-    for finding in findings:
-        st.markdown(f'**{finding["title"]}**')
-        st.write(finding["detail"])
+        for warning in warnings:
+            st.warning(warning)
 
 
 def show_risk_assessment(message):
@@ -1025,8 +1019,6 @@ if st.session_state.initial_scores is not None:
 
     show_assessment(initial_scores, "Initial AI Assessment")
     show_scores(initial_scores)
-
-    show_security_warnings(original_message, initial_findings)
 
     show_rule_assessment(
         original_message,
