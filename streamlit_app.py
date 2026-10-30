@@ -765,7 +765,7 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-   left_col, right_col = st.columns([4, 1])
+    left_col, right_col = st.columns([4, 1])
 
    with right_col:
        st.button(
