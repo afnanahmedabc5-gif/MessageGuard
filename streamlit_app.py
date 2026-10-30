@@ -792,7 +792,7 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-        st.button(
+    st.button(
         "Clear Additional Information",
         key=f"clear_additional_{st.session_state.analysis_version}",
         on_click=clear_additional_information
