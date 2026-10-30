@@ -752,7 +752,7 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-     source = st.selectbox(
+    source = st.selectbox(
         "Where did the message arrive?",
         [
             "SMS",
@@ -765,7 +765,7 @@ def show_context_section(
         key=f"message_source_{st.session_state.analysis_version}"
     )
 
-      left_col, right_col = st.columns([4, 1])
+     left_col, right_col = st.columns([4, 1])
 
     with left_col:
         reassess_clicked = st.button(
