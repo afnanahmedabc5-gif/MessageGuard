@@ -765,6 +765,9 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
+   left_col, right_col = st.columns([4, 1])
+
+with right_col:
     st.button(
         "Clear Additional Information",
         key=f"clear_additional_{st.session_state.analysis_version}",
@@ -935,10 +938,14 @@ message = st.text_area(
     height=180,
     key="message_input"
 )
-st.button(
-    "Clear Message",
-    on_click=clear_main_message
-)
+
+left_col, right_col = st.columns([4, 1])
+
+with right_col:
+    st.button(
+        "Clear Message",
+        on_click=clear_main_message
+    )
 
 
 if st.button("Analyze Message", type="primary"):
