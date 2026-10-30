@@ -859,13 +859,6 @@ def show_context_section(
         initial_label = get_label(initial_scores)
         context_label = context_result["label"]
 
-        st.info(
-            f"Initial classifier label: {initial_label}. "
-            f"Context-aware model label: {context_label}. "
-            "These are separate AI assessments, and neither "
-            "guarantees that the classification is correct."
-        )
-
         st.caption(
             f"Selected source: {st.session_state.updated_source}. "
             "The source and added context are user-provided and "
