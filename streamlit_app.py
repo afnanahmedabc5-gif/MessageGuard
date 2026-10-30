@@ -792,11 +792,16 @@ def show_context_section(
         key=f"additional_info_{st.session_state.analysis_version}"
     )
 
-    st.button(
+        st.button(
         "Clear Additional Information",
         key=f"clear_additional_{st.session_state.analysis_version}",
         on_click=clear_additional_information
     )
+
+    if st.button(
+        "Reassess with Additional Information",
+        key=f"reassess_{st.session_state.analysis_version}"
+    ):
         # Clear previous reassessment results before a new attempt.
         st.session_state.updated_scores = None
         st.session_state.updated_findings = None
