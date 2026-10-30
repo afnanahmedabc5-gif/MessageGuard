@@ -940,6 +940,12 @@ message = st.text_area(
 
 left_col, right_col = st.columns([4, 1])
 
+with left_col:
+    analyze_clicked = st.button(
+        "Analyze Message",
+        type="primary"
+    )
+
 with right_col:
     st.button(
         "Clear Message",
@@ -947,7 +953,7 @@ with right_col:
     )
 
 
-if st.button("Analyze Message", type="primary"):
+if analyze_clicked:
     # Clear every result from the previous analysis.
     st.session_state.original_message = ""
     st.session_state.initial_scores = None
