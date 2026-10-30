@@ -737,7 +737,7 @@ def show_context_section(
 ):
     current_label = get_label(initial_scores)
 
-   st.info(
+    st.info(
     "Add relevant context below, such as whether you expected "
     "the message or independently verified its sender."
 )
