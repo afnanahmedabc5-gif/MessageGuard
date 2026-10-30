@@ -939,13 +939,14 @@ message = st.text_area(
     key="message_input"
 )
 
-left_col, right_col = st.columns([4, 1])
+    left_col, right_col = st.columns([4, 1])
 
-with right_col:
-    st.button(
-        "Clear Message",
-        on_click=clear_main_message
-    )
+    with right_col:
+        st.button(
+            "Clear Additional Information",
+            key=f"clear_additional_{st.session_state.analysis_version}",
+            on_click=clear_additional_information
+        )
 
 
 if st.button("Analyze Message", type="primary"):
