@@ -987,9 +987,6 @@ if st.session_state.initial_scores is not None:
     initial_scores = st.session_state.initial_scores
     initial_findings = st.session_state.initial_findings or []
 
-    st.caption("Message currently being assessed:")
-    st.code(original_message)
-
     show_assessment(initial_scores, "Initial AI Assessment")
     
     show_rule_assessment(
