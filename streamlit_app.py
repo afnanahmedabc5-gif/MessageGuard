@@ -737,31 +737,15 @@ def show_context_section(
 ):
     current_label = get_label(initial_scores)
 
-    if initial_findings:
-        st.warning(
-            "Additional context may help interpret this result. "
-            "The independent rule-based checks also detected "
-            "a pattern that warrants caution."
-        )
-    elif current_label in ("phishing", "spam"):
-        st.warning(
-            f"The AI model classified this message as {current_label}, "
-            "but the independent rule-based checks did not detect "
-            "one of their configured warning patterns. This does not "
-            "prove that the message is safe or malicious."
-        )
-    else:
-        st.warning(
-            "The AI model's result may be uncertain. Additional context "
-            "may help, but it cannot guarantee a correct assessment."
-        )
+   st.info(
+    "Add relevant context below, such as whether you expected "
+    "the message or independently verified its sender."
+)
 
-    st.write(
-        "Provide only non-sensitive context. For example, say whether "
-        "you expected the message or independently verified the sender. "
-        "Do not enter passwords, verification codes, payment-card "
-        "details, or private identifiers."
-    )
+    st.caption(
+    "Do not include passwords, verification codes, payment details, "
+    "or other sensitive information."
+)
 
     source = st.selectbox(
         "Where did the message arrive?",
