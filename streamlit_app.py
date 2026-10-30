@@ -915,6 +915,29 @@ STATE_DEFAULTS = {
 for state_key, default_value in STATE_DEFAULTS.items():
     if state_key not in st.session_state:
         st.session_state[state_key] = default_value
+        
+def clear_main_message():
+    current_version = st.session_state.analysis_version
+
+    # Clear the main message and additional information.
+    st.session_state.message_input = ""
+    st.session_state[f"additional_info_{current_version}"] = ""
+
+    # Clear all assessments related to the message.
+    st.session_state.original_message = ""
+    st.session_state.initial_scores = None
+    st.session_state.initial_findings = None
+    st.session_state.request_context = False
+    st.session_state.updated_scores = None
+    st.session_state.updated_findings = None
+    st.session_state.updated_source = None
+    st.session_state.updated_context = None
+    st.session_state.context_assessment = None
+    st.session_state.reassessed = False
+
+    # Reset the context widgets for a fresh message.
+    st.session_state.analysis_version += 1
+
 
 
 message = st.text_area(
@@ -922,6 +945,10 @@ message = st.text_area(
     max_chars=10000,
     height=180,
     key="message_input"
+)
+st.button(
+    "Clear Message",
+    on_click=clear_main_message
 )
 
 
