@@ -736,14 +736,10 @@ def show_context_section(
 ):
     current_label = get_label(initial_scores)
 
-    st.info(
-    "Add relevant context below, such as whether you expected "
-    "the message or independently verified its sender."
-)
-
     st.caption(
-    "Do not include passwords, verification codes, payment details, "
-    "or other sensitive information."
+    "Add relevant context, such as whether you expected the message "
+    "or verified its sender. Do not include passwords, verification "
+    "codes, payment details, or other sensitive information."
 )
 
     source = st.selectbox(
