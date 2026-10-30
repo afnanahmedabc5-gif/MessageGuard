@@ -538,10 +538,9 @@ def get_risk_assessment(message):
                 "level": "high",
                 "title": "Sensitive-information request",
                 "detail": (
-                    "The message appears to request sensitive information "
-                    "or identifiers. Do not provide these details in "
-                    "response to an unexpected message. Verify the request "
-                    "using an official channel you access independently."
+                    "The message requests sensitive information. Do not share "
+                    "it in response to an unexpected message. Verify the request "
+                    "through an official channel."
                 ),
             }
         )
