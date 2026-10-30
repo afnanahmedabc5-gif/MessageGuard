@@ -1007,8 +1007,9 @@ if st.session_state.initial_scores is not None:
 
 st.divider()
 st.caption(
-    "MessageGuard — AI predictions are not guarantees of safety. "
-    "Rule-based checks can miss threats or flag harmless messages. "
-    "Avoid entering private or sensitive information."
+    "MessageGuard — AI predictions and rule-based checks are not "
+    "guarantees of safety. They may miss threats or flag harmless "
+    "messages. Never share sensitive information in response to "
+    "an unexpected request."
 )
 
