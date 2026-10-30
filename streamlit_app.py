@@ -633,7 +633,7 @@ def show_assessment(scores, title="AI Assessment"):
         st.success("✅ Likely Legitimate — AI Prediction")
         st.write(
             "The AI model did not classify this message as phishing "
-            "or spam. This does not establish that the message is safe."
+            "or spam."
         )
         st.write(
             "**Advice:** Verify unusual requests independently."
