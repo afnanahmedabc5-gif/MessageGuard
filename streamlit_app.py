@@ -941,11 +941,10 @@ message = st.text_area(
 left_col, right_col = st.columns([4, 1])
 
 with right_col:
-        st.button(
-            "Clear Additional Information",
-            key=f"clear_additional_{st.session_state.analysis_version}",
-            on_click=clear_additional_information
-        )
+    st.button(
+        "Clear Message",
+        on_click=clear_main_message
+    )
 
 
 if st.button("Analyze Message", type="primary"):
