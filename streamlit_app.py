@@ -742,6 +742,16 @@ def show_context_section(
     "codes, payment details, or other sensitive information."
 )
 
+        additional_info = st.text_area(
+        "Additional Information",
+        placeholder=(
+            "Were you expecting the message? Did you verify the sender "
+            "through an official channel? Avoid sensitive details."
+        ),
+        max_chars=5000,
+        key=f"additional_info_{st.session_state.analysis_version}"
+    )
+
     source = st.selectbox(
         "Where did the message arrive?",
         [
@@ -753,16 +763,6 @@ def show_context_section(
             "Other / unknown",
         ],
         key=f"message_source_{st.session_state.analysis_version}"
-    )
-
-    additional_info = st.text_area(
-        "Additional information (optional)",
-        placeholder=(
-            "Were you expecting the message? Did you verify the sender "
-            "through an official channel? Avoid sensitive details."
-        ),
-        max_chars=5000,
-        key=f"additional_info_{st.session_state.analysis_version}"
     )
 
     left_col, right_col = st.columns([4, 1])
