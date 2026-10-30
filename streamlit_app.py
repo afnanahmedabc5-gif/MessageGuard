@@ -720,6 +720,22 @@ def show_risk_assessment(message):
 
     
 
+def clear_additional_information():
+    current_version = st.session_state.analysis_version
+
+    # Clear only the additional information text.
+    st.session_state[
+        f"additional_info_{current_version}"
+    ] = ""
+
+    # Clear only the contextual reassessment results.
+    st.session_state.updated_scores = None
+    st.session_state.updated_findings = None
+    st.session_state.updated_source = None
+    st.session_state.updated_context = None
+    st.session_state.context_assessment = None
+    st.session_state.reassessed = False
+
 def show_context_section(
     original_message,
     initial_scores,
@@ -774,6 +790,11 @@ def show_context_section(
         ),
         max_chars=5000,
         key=f"additional_info_{st.session_state.analysis_version}"
+    )
+        st.button(
+        "Clear Additional Information",
+        key=f"clear_additional_{st.session_state.analysis_version}",
+        on_click=clear_additional_information
     )
 
     if st.button(
