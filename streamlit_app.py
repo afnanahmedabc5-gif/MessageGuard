@@ -261,17 +261,17 @@ hr {
     }
 }
 
-/* Legitimate result — Midnight Emerald */
+/* Legitimate result — Royal Emerald */
 .st-key-legitimate_result [data-testid="stAlert"] {
-    background: #123B32 !important;
-    background-color: #123B32 !important;
-    border: 1px solid #4F927D !important;
-    border-left: 1px solid #4F927D !important;
+    background: #087A45 !important;
+    background-color: #087A45 !important;
+    border: 1px solid #36A875 !important;
+    border-left: 1px solid #36A875 !important;
     border-radius: 10px !important;
 }
 
 .st-key-legitimate_result [data-testid="stAlert"] p {
-    color: #F3F0E8 !important;
+    color: #FFFFFF !important;
 }
 
 </style>
