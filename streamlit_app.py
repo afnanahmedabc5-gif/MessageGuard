@@ -20,57 +20,53 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* =========================================
-   MESSAGEGUARD — CARBON CYBER INTELLIGENCE
-   ========================================= */
+/* =================================
+   MESSAGEGUARD — MIDNIGHT SAPPHIRE
+   ================================= */
 
 /* Main application background */
 .stApp {
     background: linear-gradient(
-        135deg,
-        #10151D 0%,
-        #162230 55%,
-        #111C29 100%
+        145deg,
+        #0B1424 0%,
+        #111E32 55%,
+        #16243A 100%
     ) !important;
-    color: #F4F7FA !important;
+    color: #F3F0E8 !important;
 }
 
-/* Main content container */
+/* Main application container */
 [data-testid="stAppViewContainer"] {
     background: transparent !important;
 }
 
 /* Header */
 [data-testid="stHeader"] {
-    background: #10151D !important;
+    background: #0B1424 !important;
 }
 
 /* Main headings */
 h1, h2, h3 {
-    color: #F4F7FA !important;
+    color: #F3F0E8 !important;
     font-weight: 700 !important;
     letter-spacing: -0.4px;
-}
-
-/* Main title */
-h1 {
-    animation: titleReveal 0.65s ease-out;
 }
 
 /* General text */
 .stMarkdown,
 .stMarkdown p,
 .stMarkdown li,
-label {
-    color: #DCE5ED !important;
-}
-
-/* Secondary text */
+label,
 .stCaption {
-    color: #AAB9C8 !important;
+    color: #D8DCE5 !important;
 }
 
-/* Heading animation */
+/* Subtle champagne detail for the main title */
+h1 {
+    animation: titleReveal 0.7s ease-out;
+    text-shadow: 0 2px 18px rgba(198, 166, 107, 0.12);
+}
+
 @keyframes titleReveal {
     from {
         opacity: 0;
@@ -82,88 +78,88 @@ label {
     }
 }
 
-/* Message input and additional information */
+/* Text areas and input fields */
 .stTextArea textarea,
 .stTextInput input {
-    background: #202D3B !important;
-    color: #F4F7FA !important;
-    border: 1px solid #3A4B5C !important;
-    border-radius: 10px !important;
-    caret-color: #20C6D5 !important;
+    background-color: #18263B !important;
+    color: #F3F0E8 !important;
+    border: 1px solid #344761 !important;
+    border-radius: 9px !important;
+    caret-color: #8BA9D6 !important;
 }
 
-/* Input placeholder */
+/* Placeholder text */
 .stTextArea textarea::placeholder,
 .stTextInput input::placeholder {
-    color: #AAB9C8 !important;
+    color: #9BA8BA !important;
     opacity: 1 !important;
 }
 
 /* Input focus */
 .stTextArea textarea:focus,
 .stTextInput input:focus {
-    border-color: #20C6D5 !important;
-    box-shadow: 0 0 0 2px rgba(32, 198, 213, 0.15) !important;
+    border-color: #7295C5 !important;
+    box-shadow: 0 0 0 2px rgba(114, 149, 197, 0.16) !important;
 }
 
-/* Dropdown control */
+/* Dropdown */
 .stSelectbox [data-baseweb="select"] > div {
-    background: #202D3B !important;
-    border: 1px solid #3A4B5C !important;
-    border-radius: 10px !important;
+    background-color: #18263B !important;
+    border: 1px solid #344761 !important;
+    border-radius: 9px !important;
 }
 
 .stSelectbox [data-baseweb="select"] * {
-    color: #F4F7FA !important;
+    color: #F3F0E8 !important;
 }
 
-/* Dropdown menu */
+/* Dropdown popup */
 [data-baseweb="popover"],
 [data-baseweb="menu"] {
-    background: #202D3B !important;
+    background-color: #18263B !important;
 }
 
 [role="option"] {
-    background: #202D3B !important;
-    color: #F4F7FA !important;
+    background-color: #18263B !important;
+    color: #F3F0E8 !important;
 }
 
 [role="option"]:hover {
-    background: #30465A !important;
+    background-color: #293C57 !important;
 }
 
 /* Buttons */
 .stButton button {
-    background: #20C6D5 !important;
-    color: #101C29 !important;
-    border: 1px solid #20C6D5 !important;
+    background: #315C91 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #5278A8 !important;
     border-radius: 9px !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     transition: all 0.2s ease !important;
 }
 
 /* Button hover */
 .stButton button:hover {
-    background: #70E1E7 !important;
-    border-color: #70E1E7 !important;
-    box-shadow: 0 4px 16px rgba(32, 198, 213, 0.18);
+    background: #416FA8 !important;
+    border-color: #C6A66B !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     transform: translateY(-1px);
 }
 
 /* Keyboard focus */
 .stButton button:focus-visible {
-    outline: 2px solid #F0AE45 !important;
+    outline: 2px solid #C6A66B !important;
     outline-offset: 3px !important;
 }
 
 /* Dividers */
 hr {
-    border-color: #3A4B5C !important;
+    border-color: #344761 !important;
 }
 
-/* Footer */
+/* Footer text */
 .stCaption {
-    color: #AAB9C8 !important;
+    color: #AAB4C3 !important;
 }
 
 </style>
