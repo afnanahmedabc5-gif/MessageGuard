@@ -273,6 +273,10 @@ hr {
     border-radius: 10px !important;
 }
 
+.st-key-legitimate_result {
+    outline: 3px solid magenta !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
