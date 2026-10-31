@@ -877,14 +877,21 @@ def show_assessment(scores, title="AI Assessment"):
         )
 
     elif label == "ham":
-        st.success("✅ Likely Legitimate — AI Prediction")
-        st.write(
-            "The AI model did not classify this message as phishing "
-            "or spam."
-        )
-        st.write(
-            "**Advice:** Verify unusual requests independently."
-        )
+    st.markdown("""
+    <div class="mg-legitimate">
+        <div class="mg-legitimate-title">
+            ✓ Likely Legitimate — AI Prediction
+        </div>
+        <p>
+            The AI model did not classify this message as phishing
+            or spam.
+        </p>
+        <p>
+            <strong>Advice:</strong>
+            Verify unusual requests independently.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     else:
         st.info(
