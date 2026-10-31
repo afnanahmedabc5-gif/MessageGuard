@@ -20,27 +20,36 @@ st.set_page_config(
 st.markdown("""
 <style>
 
+/* =================================
+   MESSAGEGUARD — MIDNIGHT SAPPHIRE
+   ================================= */
+
 /* Main application background */
 .stApp {
-    background: #F4F7FB !important;
-    color: #172B4D !important;
+    background: linear-gradient(
+        145deg,
+        #0B1424 0%,
+        #111E32 55%,
+        #16243A 100%
+    ) !important;
+    color: #F3F0E8 !important;
 }
 
-/* Main content area */
+/* Main application container */
 [data-testid="stAppViewContainer"] {
-    background: #F4F7FB !important;
+    background: transparent !important;
 }
 
 /* Header */
 [data-testid="stHeader"] {
-    background: #F4F7FB !important;
+    background: #0B1424 !important;
 }
 
-/* Headings */
+/* Main headings */
 h1, h2, h3 {
-    color: #16324F !important;
+    color: #F3F0E8 !important;
     font-weight: 700 !important;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.4px;
 }
 
 /* General text */
@@ -49,65 +58,108 @@ h1, h2, h3 {
 .stMarkdown li,
 label,
 .stCaption {
-    color: #34465D !important;
+    color: #D8DCE5 !important;
+}
+
+/* Subtle champagne detail for the main title */
+h1 {
+    animation: titleReveal 0.7s ease-out;
+    text-shadow: 0 2px 18px rgba(198, 166, 107, 0.12);
+}
+
+@keyframes titleReveal {
+    from {
+        opacity: 0;
+        transform: translateY(7px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Text areas and input fields */
 .stTextArea textarea,
 .stTextInput input {
-    background: #FFFFFF !important;
-    color: #172B4D !important;
-    border: 1px solid #D8E1EA !important;
-    border-radius: 8px !important;
-    caret-color: #087E8B !important;
+    background-color: #18263B !important;
+    color: #F3F0E8 !important;
+    border: 1px solid #344761 !important;
+    border-radius: 9px !important;
+    caret-color: #8BA9D6 !important;
 }
 
-/* Placeholder */
+/* Placeholder text */
 .stTextArea textarea::placeholder,
 .stTextInput input::placeholder {
-    color: #8795A7 !important;
+    color: #9BA8BA !important;
     opacity: 1 !important;
 }
 
-/* Focus state */
+/* Input focus */
 .stTextArea textarea:focus,
 .stTextInput input:focus {
-    border-color: #087E8B !important;
-    box-shadow: 0 0 0 2px rgba(8, 126, 139, 0.12) !important;
+    border-color: #7295C5 !important;
+    box-shadow: 0 0 0 2px rgba(114, 149, 197, 0.16) !important;
 }
 
 /* Dropdown */
 .stSelectbox [data-baseweb="select"] > div {
-    background: #FFFFFF !important;
-    border: 1px solid #D8E1EA !important;
-    border-radius: 8px !important;
+    background-color: #18263B !important;
+    border: 1px solid #344761 !important;
+    border-radius: 9px !important;
 }
 
 .stSelectbox [data-baseweb="select"] * {
-    color: #172B4D !important;
+    color: #F3F0E8 !important;
 }
 
-/* Primary and secondary buttons */
+/* Dropdown popup */
+[data-baseweb="popover"],
+[data-baseweb="menu"] {
+    background-color: #18263B !important;
+}
+
+[role="option"] {
+    background-color: #18263B !important;
+    color: #F3F0E8 !important;
+}
+
+[role="option"]:hover {
+    background-color: #293C57 !important;
+}
+
+/* Buttons */
 .stButton button {
-    background: #087E8B !important;
+    background: #315C91 !important;
     color: #FFFFFF !important;
-    border: 1px solid #087E8B !important;
-    border-radius: 8px !important;
+    border: 1px solid #5278A8 !important;
+    border-radius: 9px !important;
     font-weight: 600 !important;
-    transition: background 0.2s ease, box-shadow 0.2s ease !important;
+    transition: all 0.2s ease !important;
 }
 
 /* Button hover */
 .stButton button:hover {
-    background: #066873 !important;
-    border-color: #066873 !important;
-    box-shadow: 0 3px 10px rgba(8, 126, 139, 0.16);
+    background: #416FA8 !important;
+    border-color: #C6A66B !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
 }
 
 /* Keyboard focus */
 .stButton button:focus-visible {
-    outline: 2px solid #087E8B !important;
+    outline: 2px solid #C6A66B !important;
     outline-offset: 3px !important;
+}
+
+/* Dividers */
+hr {
+    border-color: #344761 !important;
+}
+
+/* Footer text */
+.stCaption {
+    color: #AAB4C3 !important;
 }
 
 </style>
