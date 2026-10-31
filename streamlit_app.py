@@ -876,23 +876,32 @@ def show_assessment(scores, title="AI Assessment"):
             "**Advice:** Be cautious with unsolicited offers and links."
         )
 
-    elif label == "ham":
-        st.markdown("""
-        <div class="mg-legitimate">
-        <div class="mg-legitimate-title">
-            ✓ Likely Legitimate — AI Prediction
+        elif label == "ham":
+            st.markdown("""
+            <div style="
+            background: linear-gradient(135deg, #173D36, #1B473D);
+            border: 1px solid #4F927D;
+            border-left: 5px solid #83C5A8;
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin: 12px 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+            color: #FFFFFF;
+        ">
+            <strong style="font-size: 1.08rem;">
+                ✓ Likely Legitimate — AI Prediction
+            </strong>
+            <p style="margin-top: 10px; color: #FFFFFF;">
+                The AI model did not classify this message as phishing
+                or spam.
+            </p>
+            <p style="margin-bottom: 0; color: #FFFFFF;">
+                <strong>Advice:</strong>
+                Verify unusual requests independently.
+            </p>
         </div>
-        <p>
-            The AI model did not classify this message as phishing
-            or spam.
-        </p>
-        <p>
-            <strong>Advice:</strong>
-            Verify unusual requests independently.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
+        """, unsafe_allow_html=True)
+    
     else:
         st.info(
             "The AI model returned an unrecognized classification."
