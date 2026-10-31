@@ -16,35 +16,31 @@ st.set_page_config(
     page_icon="🛡️"
 )
 
+
 st.markdown("""
 <style>
 
-/* Main background */
+/* Main application background */
 .stApp {
-    background: linear-gradient(
-        135deg,
-        #102D22 0%,
-        #1B4935 45%,
-        #EAF2EC 100%
-    ) !important;
-    color: #24352C !important;
+    background: #F4F7FB !important;
+    color: #172B4D !important;
 }
 
-/* Main application area */
+/* Main content area */
 [data-testid="stAppViewContainer"] {
-    background: transparent !important;
+    background: #F4F7FB !important;
 }
 
 /* Header */
 [data-testid="stHeader"] {
-    background: rgba(16, 45, 34, 0.85) !important;
+    background: #F4F7FB !important;
 }
 
 /* Headings */
 h1, h2, h3 {
-    color: #176B45 !important;
-    font-weight: 750 !important;
-    letter-spacing: -0.5px;
+    color: #16324F !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.3px;
 }
 
 /* General text */
@@ -53,84 +49,65 @@ h1, h2, h3 {
 .stMarkdown li,
 label,
 .stCaption {
-    color: #263A30 !important;
+    color: #34465D !important;
 }
 
 /* Text areas and input fields */
 .stTextArea textarea,
 .stTextInput input {
-    background-color: #F8FBF8 !important;
-    color: #24352C !important;
-    border: 1px solid #A7C8B2 !important;
-    border-radius: 10px !important;
-    caret-color: #16834F !important;
+    background: #FFFFFF !important;
+    color: #172B4D !important;
+    border: 1px solid #D8E1EA !important;
+    border-radius: 8px !important;
+    caret-color: #087E8B !important;
 }
 
-/* Placeholder text */
+/* Placeholder */
 .stTextArea textarea::placeholder,
 .stTextInput input::placeholder {
-    color: #71877A !important;
+    color: #8795A7 !important;
     opacity: 1 !important;
 }
 
-/* Input focus */
+/* Focus state */
 .stTextArea textarea:focus,
 .stTextInput input:focus {
-    border-color: #16834F !important;
-    box-shadow: 0 0 0 2px rgba(22, 131, 79, 0.15) !important;
+    border-color: #087E8B !important;
+    box-shadow: 0 0 0 2px rgba(8, 126, 139, 0.12) !important;
 }
 
 /* Dropdown */
 .stSelectbox [data-baseweb="select"] > div {
-    background-color: #F8FBF8 !important;
-    border-color: #A7C8B2 !important;
-    border-radius: 10px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #D8E1EA !important;
+    border-radius: 8px !important;
 }
 
 .stSelectbox [data-baseweb="select"] * {
-    color: #24352C !important;
+    color: #172B4D !important;
 }
 
-/* Buttons */
+/* Primary and secondary buttons */
 .stButton button {
-    background: linear-gradient(
-        135deg,
-        #16834F,
-        #0D633A
-    ) !important;
+    background: #087E8B !important;
     color: #FFFFFF !important;
-    border: 1px solid #16834F !important;
-    border-radius: 10px !important;
-    font-weight: 650 !important;
-    transition: all 0.25s ease !important;
+    border: 1px solid #087E8B !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: background 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 /* Button hover */
 .stButton button:hover {
-    background: linear-gradient(
-        135deg,
-        #20A765,
-        #16834F
-    ) !important;
-    border-color: #20A765 !important;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 14px rgba(13, 99, 58, 0.2);
+    background: #066873 !important;
+    border-color: #066873 !important;
+    box-shadow: 0 3px 10px rgba(8, 126, 139, 0.16);
 }
 
-/* Heading animation */
-h1 {
-    animation: fadeIn 0.8s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Keyboard focus */
+.stButton button:focus-visible {
+    outline: 2px solid #087E8B !important;
+    outline-offset: 3px !important;
 }
 
 </style>
