@@ -261,16 +261,13 @@ hr {
     }
 }
 
-/* Legitimate result — deep emerald */
+/* Legitimate result — Midnight Emerald */
 .st-key-legitimate_result [data-testid="stAlert"] {
-    background: #174A40 !important;
+    background: #123B32 !important;
+    background-color: #123B32 !important;
     border: 1px solid #4F927D !important;
     border-left: 1px solid #4F927D !important;
     border-radius: 10px !important;
-}
-
-.st-key-legitimate_result [data-testid="stAlert"] p {
-    color: #F3F0E8 !important;
 }
 
 .st-key-legitimate_result [data-testid="stAlert"] p {
