@@ -162,6 +162,105 @@ hr {
     color: #AAB4C3 !important;
 }
 
+/* MessageGuard brand logo */
+.mg-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 8px 0 18px 0;
+}
+
+.mg-logo-badge {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: linear-gradient(
+        145deg,
+        #1B2B45,
+        #243957
+    );
+    border: 1px solid rgba(198, 166, 107, 0.75);
+    box-shadow:
+        0 0 0 4px rgba(198, 166, 107, 0.06),
+        0 5px 18px rgba(0, 0, 0, 0.28);
+}
+
+.mg-logo-badge svg {
+    width: 34px;
+    height: 34px;
+}
+
+.mg-brand-title {
+    color: #F3F0E8;
+    font-size: 2.15rem;
+    font-weight: 750;
+    letter-spacing: -0.8px;
+    line-height: 1.15;
+}
+
+.mg-brand-title span {
+    color: #C6A66B;
+}
+
+@media (max-width: 600px) {
+    .mg-logo-badge {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+    }
+
+    .mg-brand-title {
+        font-size: 1.75rem;
+    }
+}
+
+/* Logo entrance animation */
+.mg-brand {
+    animation: brandEntrance 0.8s ease-out both;
+}
+
+@keyframes brandEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Subtle logo hover effect */
+.mg-logo-badge {
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.mg-brand:hover .mg-logo-badge {
+    transform: translateY(-2px);
+    border-color: #D8BC83;
+    box-shadow:
+        0 0 0 4px rgba(198, 166, 107, 0.09),
+        0 7px 22px rgba(0, 0, 0, 0.32);
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .mg-brand {
+        animation: none;
+    }
+
+    .mg-logo-badge {
+        transition: none;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -1025,7 +1124,32 @@ def show_context_section(
 
 
 # Main application
-st.title("🛡️ MessageGuard")
+st.markdown("""
+<div class="mg-brand">
+    <div class="mg-logo-badge">
+        <svg viewBox="0 0 64 64" fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M32 5L53 13V29C53 43 44 53 32 59
+                   C20 53 11 43 11 29V13L32 5Z"
+                stroke="#C6A66B"
+                stroke-width="3.5"
+                stroke-linejoin="round"
+            />
+            <path
+                d="M22 32L29 39L43 24"
+                stroke="#F3F0E8"
+                stroke-width="4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        </svg>
+    </div>
+    <div class="mg-brand-title">
+        Message<span>Guard</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 st.subheader("AI-Powered Message Safety Checker")
 st.write(
     "Analyze SMS, emails, WhatsApp messages, and social media "
