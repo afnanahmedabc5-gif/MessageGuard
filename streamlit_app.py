@@ -263,8 +263,8 @@ hr {
 
 /* Legitimate result — Royal Emerald */
 .st-key-legitimate_result [data-testid="stAlert"] {
-    background: #087A45 !important;
-    background-color: #087A45 !important;
+    background: #006B45 !important;
+    background-color: #006B45 !important;
     border: 1px solid #36A875 !important;
     border-left: 1px solid #36A875 !important;
     border-radius: 10px !important;
