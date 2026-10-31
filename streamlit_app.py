@@ -877,9 +877,8 @@ def show_assessment(scores, title="AI Assessment"):
         )
 
     elif label == "ham":
-    
-    st.markdown("""
-    <div class="mg-legitimate">
+        st.markdown("""
+        <div class="mg-legitimate">
         <div class="mg-legitimate-title">
             ✓ Likely Legitimate — AI Prediction
         </div>
