@@ -261,6 +261,18 @@ hr {
     }
 }
 
+/* Legitimate result — refined emerald highlight */
+.st-key-legitimate_result [data-testid="stAlert"] {
+    background: linear-gradient(
+        135deg,
+        #173D36,
+        #1B473D
+    ) !important;
+    border: 1px solid #4F927D !important;
+    border-left: 5px solid #83C5A8 !important;
+    border-radius: 10px !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
