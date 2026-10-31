@@ -877,7 +877,9 @@ def show_assessment(scores, title="AI Assessment"):
         )
 
     elif label == "ham":
-        st.success("✅ Likely Legitimate — AI Prediction")
+        with st.container(key="legitimate_result"):
+            st.success("✅ Likely Legitimate — AI Prediction")
+
         st.write(
             "The AI model did not classify this message as phishing "
             "or spam."
@@ -885,7 +887,7 @@ def show_assessment(scores, title="AI Assessment"):
         st.write(
             "**Advice:** Verify unusual requests independently."
         )
-    
+
     else:
         st.info(
             "The AI model returned an unrecognized classification."
