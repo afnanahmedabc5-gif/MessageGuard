@@ -20,53 +20,57 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* =================================
-   MESSAGEGUARD — MIDNIGHT SAPPHIRE
-   ================================= */
+/* =========================================
+   MESSAGEGUARD — CARBON CYBER INTELLIGENCE
+   ========================================= */
 
 /* Main application background */
 .stApp {
     background: linear-gradient(
-        145deg,
-        #0B1424 0%,
-        #111E32 55%,
-        #16243A 100%
+        135deg,
+        #10151D 0%,
+        #162230 55%,
+        #111C29 100%
     ) !important;
-    color: #F3F0E8 !important;
+    color: #F4F7FA !important;
 }
 
-/* Main application container */
+/* Main content container */
 [data-testid="stAppViewContainer"] {
     background: transparent !important;
 }
 
 /* Header */
 [data-testid="stHeader"] {
-    background: #0B1424 !important;
+    background: #10151D !important;
 }
 
 /* Main headings */
 h1, h2, h3 {
-    color: #F3F0E8 !important;
+    color: #F4F7FA !important;
     font-weight: 700 !important;
     letter-spacing: -0.4px;
+}
+
+/* Main title */
+h1 {
+    animation: titleReveal 0.65s ease-out;
 }
 
 /* General text */
 .stMarkdown,
 .stMarkdown p,
 .stMarkdown li,
-label,
+label {
+    color: #DCE5ED !important;
+}
+
+/* Secondary text */
 .stCaption {
-    color: #D8DCE5 !important;
+    color: #AAB9C8 !important;
 }
 
-/* Subtle champagne detail for the main title */
-h1 {
-    animation: titleReveal 0.7s ease-out;
-    text-shadow: 0 2px 18px rgba(198, 166, 107, 0.12);
-}
-
+/* Heading animation */
 @keyframes titleReveal {
     from {
         opacity: 0;
@@ -78,88 +82,88 @@ h1 {
     }
 }
 
-/* Text areas and input fields */
+/* Message input and additional information */
 .stTextArea textarea,
 .stTextInput input {
-    background-color: #18263B !important;
-    color: #F3F0E8 !important;
-    border: 1px solid #344761 !important;
-    border-radius: 9px !important;
-    caret-color: #8BA9D6 !important;
+    background: #202D3B !important;
+    color: #F4F7FA !important;
+    border: 1px solid #3A4B5C !important;
+    border-radius: 10px !important;
+    caret-color: #20C6D5 !important;
 }
 
-/* Placeholder text */
+/* Input placeholder */
 .stTextArea textarea::placeholder,
 .stTextInput input::placeholder {
-    color: #9BA8BA !important;
+    color: #AAB9C8 !important;
     opacity: 1 !important;
 }
 
 /* Input focus */
 .stTextArea textarea:focus,
 .stTextInput input:focus {
-    border-color: #7295C5 !important;
-    box-shadow: 0 0 0 2px rgba(114, 149, 197, 0.16) !important;
+    border-color: #20C6D5 !important;
+    box-shadow: 0 0 0 2px rgba(32, 198, 213, 0.15) !important;
 }
 
-/* Dropdown */
+/* Dropdown control */
 .stSelectbox [data-baseweb="select"] > div {
-    background-color: #18263B !important;
-    border: 1px solid #344761 !important;
-    border-radius: 9px !important;
+    background: #202D3B !important;
+    border: 1px solid #3A4B5C !important;
+    border-radius: 10px !important;
 }
 
 .stSelectbox [data-baseweb="select"] * {
-    color: #F3F0E8 !important;
+    color: #F4F7FA !important;
 }
 
-/* Dropdown popup */
+/* Dropdown menu */
 [data-baseweb="popover"],
 [data-baseweb="menu"] {
-    background-color: #18263B !important;
+    background: #202D3B !important;
 }
 
 [role="option"] {
-    background-color: #18263B !important;
-    color: #F3F0E8 !important;
+    background: #202D3B !important;
+    color: #F4F7FA !important;
 }
 
 [role="option"]:hover {
-    background-color: #293C57 !important;
+    background: #30465A !important;
 }
 
 /* Buttons */
 .stButton button {
-    background: #315C91 !important;
-    color: #FFFFFF !important;
-    border: 1px solid #5278A8 !important;
+    background: #20C6D5 !important;
+    color: #101C29 !important;
+    border: 1px solid #20C6D5 !important;
     border-radius: 9px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     transition: all 0.2s ease !important;
 }
 
 /* Button hover */
 .stButton button:hover {
-    background: #416FA8 !important;
-    border-color: #C6A66B !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    background: #70E1E7 !important;
+    border-color: #70E1E7 !important;
+    box-shadow: 0 4px 16px rgba(32, 198, 213, 0.18);
     transform: translateY(-1px);
 }
 
 /* Keyboard focus */
 .stButton button:focus-visible {
-    outline: 2px solid #C6A66B !important;
+    outline: 2px solid #F0AE45 !important;
     outline-offset: 3px !important;
 }
 
 /* Dividers */
 hr {
-    border-color: #344761 !important;
+    border-color: #3A4B5C !important;
 }
 
-/* Footer text */
+/* Footer */
 .stCaption {
-    color: #AAB4C3 !important;
+    color: #AAB9C8 !important;
 }
 
 </style>
