@@ -17,6 +17,50 @@ st.set_page_config(
 )
 
 
+st.markdown("""
+<style>
+
+/* Main application background */
+.stApp {
+    background: linear-gradient(
+        135deg,
+        #050807 0%,
+        #0A1710 50%,
+        #06100B 100%
+    );
+    color: #E8F5EC;
+}
+
+/* Main headings */
+h1, h2, h3 {
+    color: #42E58A !important;
+    font-weight: 700 !important;
+}
+
+/* General text */
+p, label, .stMarkdown {
+    color: #D5E5DA;
+}
+
+/* Subtle heading animation */
+h1 {
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_resource
 def load_model():
     return pipeline(
