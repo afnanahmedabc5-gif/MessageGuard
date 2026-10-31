@@ -261,16 +261,16 @@ hr {
     }
 }
 
-/* Legitimate result — refined emerald highlight */
+/* Legitimate result — deep emerald */
 .st-key-legitimate_result [data-testid="stAlert"] {
-    background: linear-gradient(
-        135deg,
-        #173D36,
-        #1B473D
-    ) !important;
+    background: #174A40 !important;
     border: 1px solid #4F927D !important;
-    border-left: 5px solid #83C5A8 !important;
+    border-left: 1px solid #4F927D !important;
     border-radius: 10px !important;
+}
+
+.st-key-legitimate_result [data-testid="stAlert"] p {
+    color: #F3F0E8 !important;
 }
 
 .st-key-legitimate_result [data-testid="stAlert"] p {
