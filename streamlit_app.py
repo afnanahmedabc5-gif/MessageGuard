@@ -16,33 +16,108 @@ st.set_page_config(
     page_icon="🛡️"
 )
 
-
 st.markdown("""
 <style>
 
-/* Main application background */
+/* Main background */
 .stApp {
     background: linear-gradient(
         135deg,
-        #050807 0%,
-        #0A1710 50%,
-        #06100B 100%
-    );
-    color: #E8F5EC;
+        #102D22 0%,
+        #1B4935 45%,
+        #EAF2EC 100%
+    ) !important;
+    color: #24352C !important;
 }
 
-/* Main headings */
+/* Main application area */
+[data-testid="stAppViewContainer"] {
+    background: transparent !important;
+}
+
+/* Header */
+[data-testid="stHeader"] {
+    background: rgba(16, 45, 34, 0.85) !important;
+}
+
+/* Headings */
 h1, h2, h3 {
-    color: #42E58A !important;
-    font-weight: 700 !important;
+    color: #176B45 !important;
+    font-weight: 750 !important;
+    letter-spacing: -0.5px;
 }
 
 /* General text */
-p, label, .stMarkdown {
-    color: #D5E5DA;
+.stMarkdown,
+.stMarkdown p,
+.stMarkdown li,
+label,
+.stCaption {
+    color: #263A30 !important;
 }
 
-/* Subtle heading animation */
+/* Text areas and input fields */
+.stTextArea textarea,
+.stTextInput input {
+    background-color: #F8FBF8 !important;
+    color: #24352C !important;
+    border: 1px solid #A7C8B2 !important;
+    border-radius: 10px !important;
+    caret-color: #16834F !important;
+}
+
+/* Placeholder text */
+.stTextArea textarea::placeholder,
+.stTextInput input::placeholder {
+    color: #71877A !important;
+    opacity: 1 !important;
+}
+
+/* Input focus */
+.stTextArea textarea:focus,
+.stTextInput input:focus {
+    border-color: #16834F !important;
+    box-shadow: 0 0 0 2px rgba(22, 131, 79, 0.15) !important;
+}
+
+/* Dropdown */
+.stSelectbox [data-baseweb="select"] > div {
+    background-color: #F8FBF8 !important;
+    border-color: #A7C8B2 !important;
+    border-radius: 10px !important;
+}
+
+.stSelectbox [data-baseweb="select"] * {
+    color: #24352C !important;
+}
+
+/* Buttons */
+.stButton button {
+    background: linear-gradient(
+        135deg,
+        #16834F,
+        #0D633A
+    ) !important;
+    color: #FFFFFF !important;
+    border: 1px solid #16834F !important;
+    border-radius: 10px !important;
+    font-weight: 650 !important;
+    transition: all 0.25s ease !important;
+}
+
+/* Button hover */
+.stButton button:hover {
+    background: linear-gradient(
+        135deg,
+        #20A765,
+        #16834F
+    ) !important;
+    border-color: #20A765 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 14px rgba(13, 99, 58, 0.2);
+}
+
+/* Heading animation */
 h1 {
     animation: fadeIn 0.8s ease-in-out;
 }
@@ -56,43 +131,6 @@ h1 {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-
-/* Text input and text area */
-.stTextArea textarea,
-.stTextInput input {
-    background-color: #101C15 !important;
-    color: #E8F5EC !important;
-    border: 1px solid #286B45 !important;
-    border-radius: 8px !important;
-    caret-color: #42E58A !important;
-}
-
-/* Placeholder text */
-.stTextArea textarea::placeholder,
-.stTextInput input::placeholder {
-    color: #91A99A !important;
-    opacity: 1 !important;
-}
-
-/* Dropdown control */
-.stSelectbox [data-baseweb="select"] > div {
-    background-color: #101C15 !important;
-    color: #E8F5EC !important;
-    border-color: #286B45 !important;
-}
-
-/* Dropdown selected text */
-.stSelectbox [data-baseweb="select"] * {
-    color: #E8F5EC !important;
-}
-
-/* Focus effect */
-.stTextArea textarea:focus,
-.stTextInput input:focus {
-    border-color: #42E58A !important;
-    box-shadow: 0 0 0 1px #42E58A !important;
 }
 
 </style>
