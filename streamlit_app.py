@@ -876,7 +876,7 @@ def show_assessment(scores, title="AI Assessment"):
             "**Advice:** Be cautious with unsolicited offers and links."
         )
 
-        elif label == "ham":
+    elif label == "ham":
             st.markdown("""
             <div style="
             background: linear-gradient(135deg, #173D36, #1B473D);
