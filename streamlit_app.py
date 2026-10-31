@@ -58,6 +58,43 @@ h1 {
     }
 }
 
+
+/* Text input and text area */
+.stTextArea textarea,
+.stTextInput input {
+    background-color: #101C15 !important;
+    color: #E8F5EC !important;
+    border: 1px solid #286B45 !important;
+    border-radius: 8px !important;
+    caret-color: #42E58A !important;
+}
+
+/* Placeholder text */
+.stTextArea textarea::placeholder,
+.stTextInput input::placeholder {
+    color: #91A99A !important;
+    opacity: 1 !important;
+}
+
+/* Dropdown control */
+.stSelectbox [data-baseweb="select"] > div {
+    background-color: #101C15 !important;
+    color: #E8F5EC !important;
+    border-color: #286B45 !important;
+}
+
+/* Dropdown selected text */
+.stSelectbox [data-baseweb="select"] * {
+    color: #E8F5EC !important;
+}
+
+/* Focus effect */
+.stTextArea textarea:focus,
+.stTextInput input:focus {
+    border-color: #42E58A !important;
+    box-shadow: 0 0 0 1px #42E58A !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
